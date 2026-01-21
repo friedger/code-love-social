@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "com.source-of-clarity.comment",
+  "id": "com.source-of-clarity.temp.comment",
   "defs": {
     "main": {
       "type": "record",
@@ -12,7 +12,7 @@
         "properties": {
           "subject": {
             "type": "ref",
-            "ref": "com.source-of-clarity.defs#contractRef",
+            "ref": "com.source-of-clarity.temp.defs#contractRef",
             "description": "The contract being commented on"
           },
           "lineNumber": {
@@ -22,7 +22,7 @@
           },
           "lineRange": {
             "type": "ref",
-            "ref": "com.source-of-clarity.defs#lineRange",
+            "ref": "com.source-of-clarity.temp.defs#lineRange",
             "description": "Range of lines for multi-line comments. Mutually exclusive with lineNumber."
           },
           "text": {

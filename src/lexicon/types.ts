@@ -1,4 +1,4 @@
-// AT Protocol record types for com.source-of-clarity namespace
+// AT Protocol record types for com.source-of-clarity.temp namespace
 
 /** Reference to a Stacks smart contract */
 export interface ContractRef {
@@ -33,11 +33,11 @@ export interface ReplyRef {
 }
 
 /**
- * com.source-of-clarity.comment record
+ * com.source-of-clarity.temp.comment record
  * A comment on a Clarity smart contract
  */
 export interface CommentRecord {
-  $type: 'com.source-of-clarity.comment';
+  $type: 'com.source-of-clarity.temp.comment';
   /** The contract being commented on */
   subject: ContractRef;
   /** Specific line number (omit for contract-level comments) */
@@ -53,11 +53,11 @@ export interface CommentRecord {
 }
 
 /**
- * com.source-of-clarity.like record
+ * com.source-of-clarity.temp.like record
  * A like on a comment
  */
 export interface LikeRecord {
-  $type: 'com.source-of-clarity.like';
+  $type: 'com.source-of-clarity.temp.like';
   /** Reference to the liked comment */
   subject: StrongRef;
   /** ISO 8601 creation timestamp */
@@ -133,5 +133,5 @@ export interface Relationship {
 export interface AppUser extends UserProfile, LocalUserData {}
 
 // Collection NSIDs
-export const LEXICON_COMMENT = 'com.source-of-clarity.comment' as const;
-export const LEXICON_LIKE = 'com.source-of-clarity.like' as const;
+export const LEXICON_COMMENT = 'com.source-of-clarity.temp.comment' as const;
+export const LEXICON_LIKE = 'com.source-of-clarity.temp.like' as const;

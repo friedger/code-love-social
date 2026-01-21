@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@atproto/api": "npm:@atproto/api@^0.18.16"
+  }
+}

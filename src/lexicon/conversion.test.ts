@@ -14,7 +14,7 @@ describe('Conversion helpers', () => {
   describe('toCommentRecord', () => {
     it('should convert a contract-level comment', () => {
       const comment: Comment = {
-        uri: 'at://did:plc:user1/com.source-of-clarity.comment/abc123',
+        uri: 'at://did:plc:user1/com.source-of-clarity.temp.comment/abc123',
         cid: 'bafyrei123',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
@@ -30,7 +30,7 @@ describe('Conversion helpers', () => {
 
       const record = toCommentRecord(comment);
 
-      expect(record.$type).toBe('com.source-of-clarity.comment');
+      expect(record.$type).toBe('com.source-of-clarity.temp.comment');
       expect(record.subject.principal).toBe('SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9');
       expect(record.subject.contractName).toBe('alex-vault');
       expect(record.text).toBe('Great contract architecture!');
@@ -41,7 +41,7 @@ describe('Conversion helpers', () => {
 
     it('should convert a line-level comment', () => {
       const comment: Comment = {
-        uri: 'at://did:plc:user1/com.source-of-clarity.comment/def456',
+        uri: 'at://did:plc:user1/com.source-of-clarity.temp.comment/def456',
         cid: 'bafyrei456',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
@@ -65,7 +65,7 @@ describe('Conversion helpers', () => {
 
     it('should convert a range comment', () => {
       const comment: Comment = {
-        uri: 'at://did:plc:user1/com.source-of-clarity.comment/ghi789',
+        uri: 'at://did:plc:user1/com.source-of-clarity.temp.comment/ghi789',
         cid: 'bafyrei789',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
@@ -89,7 +89,7 @@ describe('Conversion helpers', () => {
 
     it('should convert a reply comment', () => {
       const comment: Comment = {
-        uri: 'at://did:plc:user2/com.source-of-clarity.comment/reply1',
+        uri: 'at://did:plc:user2/com.source-of-clarity.temp.comment/reply1',
         cid: 'bafyreireply1',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
@@ -104,11 +104,11 @@ describe('Conversion helpers', () => {
         parentId: 'def456',
         reply: {
           root: {
-            uri: 'at://did:plc:user1/com.source-of-clarity.comment/def456',
+            uri: 'at://did:plc:user1/com.source-of-clarity.temp.comment/def456',
             cid: 'bafyrei456',
           },
           parent: {
-            uri: 'at://did:plc:user1/com.source-of-clarity.comment/def456',
+            uri: 'at://did:plc:user1/com.source-of-clarity.temp.comment/def456',
             cid: 'bafyrei456',
           },
         },
@@ -118,7 +118,7 @@ describe('Conversion helpers', () => {
       const record = toCommentRecord(comment);
 
       expect(record.reply).toBeDefined();
-      expect(record.reply?.root.uri).toBe('at://did:plc:user1/com.source-of-clarity.comment/def456');
+      expect(record.reply?.root.uri).toBe('at://did:plc:user1/com.source-of-clarity.temp.comment/def456');
       expect(record.reply?.parent.cid).toBe('bafyrei456');
       expect(isValidCommentRecord(record)).toBe(true);
     });
@@ -127,7 +127,7 @@ describe('Conversion helpers', () => {
   describe('fromCommentRecord', () => {
     it('should convert a CommentRecord to Comment', () => {
       const record: CommentRecord = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
@@ -139,14 +139,14 @@ describe('Conversion helpers', () => {
 
       const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:author1',
-        uri: 'at://did:plc:author1/com.source-of-clarity.comment/abc',
+        uri: 'at://did:plc:author1/com.source-of-clarity.temp.comment/abc',
         cid: 'bafyrei123',
         likes: 10,
         likedBy: ['did:plc:user1', 'did:plc:user2'],
         replyCount: 3,
       });
 
-      expect(comment.uri).toBe('at://did:plc:author1/com.source-of-clarity.comment/abc');
+      expect(comment.uri).toBe('at://did:plc:author1/com.source-of-clarity.temp.comment/abc');
       expect(comment.authorDid).toBe('did:plc:author1');
       expect(comment.text).toBe('The asserts! check here is critical for security.');
       expect(comment.lineNumber).toBe(35);
@@ -158,7 +158,7 @@ describe('Conversion helpers', () => {
 
     it('should convert a reply CommentRecord with parentId', () => {
       const record: CommentRecord = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
@@ -166,11 +166,11 @@ describe('Conversion helpers', () => {
         text: 'This is a reply.',
         reply: {
           root: {
-            uri: 'at://did:plc:author1/com.source-of-clarity.comment/root',
+            uri: 'at://did:plc:author1/com.source-of-clarity.temp.comment/root',
             cid: 'bafyreiroot',
           },
           parent: {
-            uri: 'at://did:plc:author1/com.source-of-clarity.comment/parent',
+            uri: 'at://did:plc:author1/com.source-of-clarity.temp.comment/parent',
             cid: 'bafyreiparent',
           },
         },
@@ -179,7 +179,7 @@ describe('Conversion helpers', () => {
 
       const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:replier',
-        uri: 'at://did:plc:replier/com.source-of-clarity.comment/reply',
+        uri: 'at://did:plc:replier/com.source-of-clarity.temp.comment/reply',
         cid: 'bafyreireply',
         parentId: 'parent-local-id',
       });
@@ -191,7 +191,7 @@ describe('Conversion helpers', () => {
 
     it('should use defaults for optional fields', () => {
       const record: CommentRecord = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
           principal: 'SP123',
           contractName: 'test',
@@ -202,7 +202,7 @@ describe('Conversion helpers', () => {
 
       const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:test',
-        uri: 'at://did:plc:test/com.source-of-clarity.comment/x',
+        uri: 'at://did:plc:test/com.source-of-clarity.temp.comment/x',
         cid: 'cid',
       });
 
@@ -221,7 +221,7 @@ describe('Conversion helpers', () => {
         'This is a new comment.'
       );
 
-      expect(record.$type).toBe('com.source-of-clarity.comment');
+      expect(record.$type).toBe('com.source-of-clarity.temp.comment');
       expect(record.subject.principal).toBe('SP123');
       expect(record.text).toBe('This is a new comment.');
       expect(record.lineNumber).toBeUndefined();
@@ -259,8 +259,8 @@ describe('Conversion helpers', () => {
         {
           lineNumber: 42,
           reply: {
-            root: { uri: 'at://did:plc:x/com.source-of-clarity.comment/r', cid: 'cid1' },
-            parent: { uri: 'at://did:plc:x/com.source-of-clarity.comment/p', cid: 'cid2' },
+            root: { uri: 'at://did:plc:x/com.source-of-clarity.temp.comment/r', cid: 'cid1' },
+            parent: { uri: 'at://did:plc:x/com.source-of-clarity.temp.comment/p', cid: 'cid2' },
           },
         }
       );
@@ -274,12 +274,12 @@ describe('Conversion helpers', () => {
   describe('createLikeRecord', () => {
     it('should create a valid like record', () => {
       const record = createLikeRecord({
-        uri: 'at://did:plc:abc123/com.source-of-clarity.comment/xyz',
+        uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/xyz',
         cid: 'bafyreiabc123xyz',
       });
 
-      expect(record.$type).toBe('com.source-of-clarity.like');
-      expect(record.subject.uri).toBe('at://did:plc:abc123/com.source-of-clarity.comment/xyz');
+      expect(record.$type).toBe('com.source-of-clarity.temp.like');
+      expect(record.subject.uri).toBe('at://did:plc:abc123/com.source-of-clarity.temp.comment/xyz');
       expect(record.subject.cid).toBe('bafyreiabc123xyz');
       expect(record.createdAt).toBeDefined();
       expect(isValidLikeRecord(record)).toBe(true);
@@ -303,7 +303,7 @@ describe('Conversion helpers', () => {
 
   describe('extractParentIdFromUri', () => {
     it('should extract rkey from AT URI', () => {
-      const uri = 'at://did:plc:abc123/com.source-of-clarity.comment/xyz789';
+      const uri = 'at://did:plc:abc123/com.source-of-clarity.temp.comment/xyz789';
       const parentId = extractParentIdFromUri(uri);
       expect(parentId).toBe('xyz789');
     });
