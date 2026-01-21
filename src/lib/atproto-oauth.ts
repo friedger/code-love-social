@@ -10,10 +10,10 @@ const getClientMetadata = () => {
   const isPreview = origin.includes("lovable.app");
   
   if (isLocalhost || isPreview) {
-    // Loopback clients use http://127.0.0.1 format with query params
-    // This tells the PDS to not fetch metadata from a URL
+    // Loopback clients must use http://localhost (not 127.0.0.1) as the origin
+    // The redirect_uri in the query string specifies where the user is redirected back
     return {
-      client_id: `http://127.0.0.1/?redirect_uri=${encodeURIComponent(origin + "/oauth/callback")}&scope=${encodeURIComponent("atproto transition:generic")}`,
+      client_id: `http://localhost?redirect_uri=${encodeURIComponent(origin + "/oauth/callback")}&scope=${encodeURIComponent("atproto transition:generic")}`,
       redirect_uris: [origin + "/oauth/callback"] as [string, ...string[]],
       scope: "atproto transition:generic",
       grant_types: ["authorization_code", "refresh_token"] as ["authorization_code", "refresh_token"],
