@@ -5,17 +5,13 @@ import { BrowserOAuthClient } from "@atproto/oauth-client-browser";
 const getClientMetadata = () => {
   const origin = window.location.origin;
   
-  // For localhost, preview environments, or any non-production domain, use loopback configuration
-  // The loopback client doesn't require hosting client-metadata.json
-  const isDevOrPreview = 
-    origin.includes("localhost") || 
-    origin.includes("127.0.0.1") ||
-    origin.includes("lovable.app") ||
-    origin.includes("preview");
+  // For localhost only, use loopback configuration
+  const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1");
     
-  if (isDevOrPreview) {
+  if (isLocalhost) {
+    // Loopback clients must use http://127.0.0.1 format with query params
     return {
-      client_id: `http://localhost?redirect_uri=${encodeURIComponent(origin + "/oauth/callback")}&scope=${encodeURIComponent("atproto transition:generic")}`,
+      client_id: `http://127.0.0.1/?redirect_uri=${encodeURIComponent(origin + "/oauth/callback")}&scope=${encodeURIComponent("atproto transition:generic")}`,
       redirect_uris: [origin + "/oauth/callback"] as [string, ...string[]],
       scope: "atproto transition:generic",
       grant_types: ["authorization_code", "refresh_token"] as ["authorization_code", "refresh_token"],
