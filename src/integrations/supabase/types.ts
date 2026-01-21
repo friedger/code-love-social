@@ -18,24 +18,36 @@ export type Database = {
         Row: {
           code_verifier: string
           created_at: string | null
+          did: string | null
+          dpop_private_key_jwk: string | null
+          dpop_public_key_jwk: string | null
           expires_at: string | null
           id: string
+          pds_url: string | null
           return_url: string
           state: string
         }
         Insert: {
           code_verifier: string
           created_at?: string | null
+          did?: string | null
+          dpop_private_key_jwk?: string | null
+          dpop_public_key_jwk?: string | null
           expires_at?: string | null
           id?: string
+          pds_url?: string | null
           return_url: string
           state: string
         }
         Update: {
           code_verifier?: string
           created_at?: string | null
+          did?: string | null
+          dpop_private_key_jwk?: string | null
+          dpop_public_key_jwk?: string | null
           expires_at?: string | null
           id?: string
+          pds_url?: string | null
           return_url?: string
           state?: string
         }
