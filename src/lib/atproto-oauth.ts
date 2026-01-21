@@ -1,12 +1,9 @@
 import { BrowserOAuthClient } from "@atproto/oauth-client-browser";
 
-// Get the Supabase URL for the edge function
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://uxaxgrdxikvligkjyyxz.supabase.co";
-
 const getClientMetadata = () => {
   const origin = window.location.origin;
   
-  // For localhost only, use loopback configuration
+  // For localhost, use loopback configuration
   const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1");
     
   if (isLocalhost) {
@@ -23,12 +20,10 @@ const getClientMetadata = () => {
     };
   }
   
-  // For non-localhost environments, use the edge function to serve client metadata
-  // This avoids SPA routing issues that cause "unexpected redirect" errors
-  const clientMetadataUrl = `${SUPABASE_URL}/functions/v1/client-metadata?origin=${encodeURIComponent(origin)}`;
-  
+  // For all other environments (preview, production), use the static client-metadata.json
+  // The client_id must be on the same origin as client_uri per AT Protocol spec
   return {
-    client_id: clientMetadataUrl,
+    client_id: `${origin}/client-metadata.json`,
     redirect_uris: [origin + "/oauth/callback"] as [string, ...string[]],
     scope: "atproto transition:generic",
     grant_types: ["authorization_code", "refresh_token"] as ["authorization_code", "refresh_token"],
