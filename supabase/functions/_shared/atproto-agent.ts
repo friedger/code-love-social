@@ -9,6 +9,14 @@ export interface SessionData {
   access_token: string;
   dpop_private_key_jwk: string;
   auth_server_url?: string;
+  refresh_token?: string;
+  token_expires_at?: string;
+}
+
+export interface RefreshResult {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: Date;
 }
 
 // Helper to generate random string
@@ -247,4 +255,93 @@ export function generateTID(): string {
   }
   
   return tid;
+}
+
+/**
+ * Check if a token is expired or about to expire (within buffer)
+ */
+export function isTokenExpired(expiresAt: string | undefined, bufferMs = 5 * 60 * 1000): boolean {
+  if (!expiresAt) return true;
+  const now = Date.now();
+  const expiry = new Date(expiresAt).getTime();
+  return now > expiry - bufferMs;
+}
+
+/**
+ * Refresh an expired access token using the refresh token
+ */
+export async function refreshAccessToken(
+  session: SessionData,
+  refreshToken: string,
+  authServerUrl: string
+): Promise<RefreshResult> {
+  // Import DPoP keys
+  const privateJwk = JSON.parse(session.dpop_private_key_jwk);
+  const privateKey = await importPrivateKey(privateJwk);
+  const publicJwk = extractPublicJwk(privateJwk);
+  
+  // Token endpoint URL
+  const tokenUrl = `${authServerUrl}/oauth/token`;
+  
+  // Create DPoP proof for token request (no ath for token endpoint)
+  const dpopProof = await createDPoPProof(
+    privateKey,
+    publicJwk,
+    "POST",
+    tokenUrl
+  );
+  
+  // Request new tokens
+  let response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "DPoP": dpopProof,
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }),
+  });
+  
+  // Handle DPoP nonce requirement
+  if (response.status === 400 || response.status === 401) {
+    const newNonce = response.headers.get("DPoP-Nonce");
+    if (newNonce) {
+      // Retry with nonce
+      const retryProof = await createDPoPProof(
+        privateKey,
+        publicJwk,
+        "POST",
+        tokenUrl,
+        newNonce
+      );
+      
+      response = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "DPoP": retryProof,
+        },
+        body: new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: refreshToken,
+        }),
+      });
+    }
+  }
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Token refresh failed:", response.status, errorText);
+    throw new Error(`Token refresh failed: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token || refreshToken, // Some servers don't rotate refresh tokens
+    expiresAt: new Date(Date.now() + (data.expires_in || 3600) * 1000),
+  };
 }
