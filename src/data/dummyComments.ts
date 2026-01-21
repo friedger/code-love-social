@@ -1,11 +1,13 @@
 import { users } from "./dummyUsers";
+import type { ContractRef, StrongRef } from "@/lexicon/types";
 
 export interface Comment {
   id: string;
   uri: string; // AT Protocol record URI
   cid: string; // AT Protocol CID
   contractId: string;
-  lineNumber: number;
+  contract?: ContractRef; // AT Protocol contract reference
+  lineNumber?: number; // Optional - omit for contract-level comments
   lineRange?: { start: number; end: number }; // For multi-line comments
   authorDid: string;
   content: string;
@@ -14,6 +16,10 @@ export interface Comment {
   likes: number;
   likedBy: string[]; // Array of DIDs
   parentId?: string; // For replies
+  reply?: {
+    root: StrongRef;
+    parent: StrongRef;
+  };
   replyCount: number;
 }
 
@@ -345,4 +351,13 @@ export function getReplies(commentId: string): Comment[] {
 
 export function getCommentById(id: string): Comment | undefined {
   return comments.find((c) => c.id === id);
+}
+
+/**
+ * Get contract-level comments (no line targeting)
+ */
+export function getContractLevelComments(contractId: string): Comment[] {
+  return comments.filter(
+    (c) => c.contractId === contractId && !c.parentId && c.lineNumber === undefined && c.lineRange === undefined
+  );
 }

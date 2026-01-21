@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "com.source-of-clarity.defs",
+  "defs": {
+    "contractRef": {
+      "type": "object",
+      "description": "Reference to a Clarity smart contract on the Stacks blockchain",
+      "required": ["principal", "contractName"],
+      "properties": {
+        "principal": {
+          "type": "string",
+          "description": "The Stacks address that deployed the contract (e.g., SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9)"
+        },
+        "contractName": {
+          "type": "string",
+          "description": "The name of the contract (e.g., alex-vault)",
+          "maxLength": 128
+        }
+      }
+    },
+    "lineRange": {
+      "type": "object",
+      "description": "A range of lines in contract source code",
+      "required": ["start", "end"],
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Starting line number (inclusive)"
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Ending line number (inclusive)"
+        }
+      }
+    }
+  }
+}

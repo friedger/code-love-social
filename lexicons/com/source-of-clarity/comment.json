@@ -1,0 +1,60 @@
+{
+  "lexicon": 1,
+  "id": "com.source-of-clarity.comment",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A comment on a Clarity smart contract. Can target the entire contract, a specific line, or a range of lines.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "text", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.source-of-clarity.defs#contractRef",
+            "description": "The contract being commented on"
+          },
+          "lineNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Specific line number for line-level comments. Omit for contract-level comments."
+          },
+          "lineRange": {
+            "type": "ref",
+            "ref": "com.source-of-clarity.defs#lineRange",
+            "description": "Range of lines for multi-line comments. Mutually exclusive with lineNumber."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 10000,
+            "maxGraphemes": 3000,
+            "description": "The comment content"
+          },
+          "reply": {
+            "type": "object",
+            "description": "Reply reference for threaded conversations",
+            "required": ["root", "parent"],
+            "properties": {
+              "root": {
+                "type": "ref",
+                "ref": "com.atproto.repo.strongRef",
+                "description": "Reference to the root comment of the thread"
+              },
+              "parent": {
+                "type": "ref",
+                "ref": "com.atproto.repo.strongRef",
+                "description": "Reference to the immediate parent comment"
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "ISO 8601 timestamp of creation"
+          }
+        }
+      }
+    }
+  }
+}
