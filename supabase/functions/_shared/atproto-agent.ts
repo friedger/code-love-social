@@ -130,7 +130,12 @@ export function createDPoPFetch(
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const method = (init?.method || "GET").toUpperCase();
-    const hostname = new URL(url).hostname;
+    
+    // Parse URL and extract base URL without query params/fragments for htu claim
+    // DPoP spec (RFC 9449) requires htu to exclude query and fragment parts
+    const urlObj = new URL(url);
+    const htu = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+    const hostname = urlObj.hostname;
     
     // Create access token hash
     const ath = await createAccessTokenHash(accessToken);
@@ -138,12 +143,12 @@ export function createDPoPFetch(
     // Get cached nonce for this host if available
     const cachedNonce = dpopNonces.get(hostname);
     
-    // Generate DPoP proof
+    // Generate DPoP proof with cleaned htu (no query params)
     const dpopProof = await createDPoPProof(
       privateKey,
       publicJwk,
       method,
-      url,
+      htu,
       cachedNonce,
       ath
     );
@@ -167,7 +172,7 @@ export function createDPoPFetch(
           privateKey,
           publicJwk,
           method,
-          url,
+          htu,
           newNonce,
           ath
         );
