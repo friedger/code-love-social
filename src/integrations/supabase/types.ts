@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       atproto_oauth_state: {
         Row: {
+          auth_server_url: string | null
           code_verifier: string
           created_at: string | null
           did: string | null
@@ -28,6 +29,7 @@ export type Database = {
           state: string
         }
         Insert: {
+          auth_server_url?: string | null
           code_verifier: string
           created_at?: string | null
           did?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           state: string
         }
         Update: {
+          auth_server_url?: string | null
           code_verifier?: string
           created_at?: string | null
           did?: string | null
@@ -56,6 +59,7 @@ export type Database = {
       atproto_sessions: {
         Row: {
           access_token: string
+          auth_server_url: string | null
           created_at: string | null
           did: string
           dpop_private_key_jwk: string | null
@@ -69,6 +73,7 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          auth_server_url?: string | null
           created_at?: string | null
           did: string
           dpop_private_key_jwk?: string | null
@@ -82,6 +87,7 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          auth_server_url?: string | null
           created_at?: string | null
           did?: string
           dpop_private_key_jwk?: string | null
