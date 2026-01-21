@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createAuthenticatedAgent, generateTID } from "../_shared/atproto-agent.ts";
+import { 
+  createAuthenticatedAgent, 
+  generateTID, 
+  isTokenExpired, 
+  refreshAccessToken,
+  type SessionData 
+} from "../_shared/atproto-agent.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,9 +25,12 @@ const LIKE_COLLECTION = "com.source-of-clarity.temp.like";
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 /**
- * Validate session token and return session data
+ * Validate session token, refresh if needed, and return session data with fresh token
  */
-async function getSession(sessionToken: string) {
+async function getValidSession(sessionToken: string): Promise<{
+  session: SessionData & { id: string; did: string; handle: string };
+  refreshed: boolean;
+}> {
   const { data: session, error } = await supabase
     .from("atproto_sessions")
     .select("*")
@@ -32,7 +41,60 @@ async function getSession(sessionToken: string) {
     throw new Error("Invalid session");
   }
 
-  return session;
+  // Check if token is expired or about to expire
+  if (isTokenExpired(session.token_expires_at)) {
+    console.log("Access token expired, refreshing...");
+    
+    if (!session.refresh_token || !session.auth_server_url) {
+      throw new Error("Session cannot be refreshed - missing refresh token or auth server URL");
+    }
+
+    try {
+      const newTokens = await refreshAccessToken(
+        {
+          did: session.did,
+          pds_url: session.pds_url,
+          access_token: session.access_token,
+          dpop_private_key_jwk: session.dpop_private_key_jwk,
+          auth_server_url: session.auth_server_url,
+        },
+        session.refresh_token,
+        session.auth_server_url
+      );
+
+      // Update session in database
+      const { error: updateError } = await supabase
+        .from("atproto_sessions")
+        .update({
+          access_token: newTokens.accessToken,
+          refresh_token: newTokens.refreshToken,
+          token_expires_at: newTokens.expiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", session.id);
+
+      if (updateError) {
+        console.error("Failed to update session:", updateError);
+      }
+
+      console.log("Token refreshed successfully");
+
+      return {
+        session: {
+          ...session,
+          access_token: newTokens.accessToken,
+          refresh_token: newTokens.refreshToken,
+          token_expires_at: newTokens.expiresAt.toISOString(),
+        },
+        refreshed: true,
+      };
+    } catch (refreshError) {
+      console.error("Token refresh failed:", refreshError);
+      throw new Error("Session expired and refresh failed");
+    }
+  }
+
+  return { session, refreshed: false };
 }
 
 /**
@@ -159,7 +221,7 @@ serve(async (req) => {
         );
       }
 
-      const session = await getSession(sessionToken);
+      const { session } = await getValidSession(sessionToken);
       const body = await req.json();
       const input = validateCommentInput(body);
 
@@ -246,7 +308,7 @@ serve(async (req) => {
         );
       }
 
-      const session = await getSession(sessionToken);
+      const { session } = await getValidSession(sessionToken);
       const body = await req.json();
 
       if (!body.uri || !body.cid) {
@@ -321,7 +383,7 @@ serve(async (req) => {
         );
       }
 
-      const session = await getSession(sessionToken);
+      const { session } = await getValidSession(sessionToken);
       const likeUri = url.searchParams.get("uri");
 
       if (!likeUri) {
@@ -378,7 +440,7 @@ serve(async (req) => {
         );
       }
 
-      const session = await getSession(sessionToken);
+      const { session } = await getValidSession(sessionToken);
       const rkey = pathParts[1];
 
       // Create authenticated agent
