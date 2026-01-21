@@ -129,7 +129,7 @@ export function createDPoPFetch(
 ): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-    const method = init?.method || "GET";
+    const method = (init?.method || "GET").toUpperCase();
     const hostname = new URL(url).hostname;
     
     // Create access token hash
