@@ -41,11 +41,13 @@ export async function createDPoPProof(
     },
   };
 
+  const now = Math.floor(Date.now() / 1000);
   const payload: Record<string, unknown> = {
     jti: generateRandomString(16),
     htm: method,
     htu: url,
-    iat: Math.floor(Date.now() / 1000),
+    iat: now,
+    exp: now + 120, // Expire in 2 minutes (short-lived as per DPoP spec)
   };
 
   if (nonce) payload.nonce = nonce;
