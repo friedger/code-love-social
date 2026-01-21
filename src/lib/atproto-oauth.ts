@@ -3,11 +3,15 @@ import { BrowserOAuthClient } from "@atproto/oauth-client-browser";
 const getClientMetadata = () => {
   const origin = window.location.origin;
   
-  // For localhost, use loopback configuration
+  // Use loopback client for localhost AND preview environments
+  // The loopback format bypasses the need for a hosted client-metadata.json
+  // which avoids SPA routing redirect issues
   const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1");
-    
-  if (isLocalhost) {
-    // Loopback clients must use http://127.0.0.1 format with query params
+  const isPreview = origin.includes("lovable.app");
+  
+  if (isLocalhost || isPreview) {
+    // Loopback clients use http://127.0.0.1 format with query params
+    // This tells the PDS to not fetch metadata from a URL
     return {
       client_id: `http://127.0.0.1/?redirect_uri=${encodeURIComponent(origin + "/oauth/callback")}&scope=${encodeURIComponent("atproto transition:generic")}`,
       redirect_uris: [origin + "/oauth/callback"] as [string, ...string[]],
@@ -20,7 +24,7 @@ const getClientMetadata = () => {
     };
   }
   
-  // For all other environments (preview, production), use the static client-metadata.json
+  // For production environments with proper static file serving
   // The client_id must be on the same origin as client_uri per AT Protocol spec
   return {
     client_id: `${origin}/client-metadata.json`,
