@@ -13,7 +13,7 @@ import type { CommentRecord, LikeRecord } from './types';
 describe('AT Protocol Lexicon Types', () => {
   describe('Contract-level comment', () => {
     const contractLevelComment: CommentRecord = {
-      $type: 'com.source-of-clarity.comment',
+      $type: 'com.source-of-clarity.temp.comment',
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
@@ -37,7 +37,7 @@ describe('AT Protocol Lexicon Types', () => {
 
   describe('Line-specific comment', () => {
     const lineSpecificComment: CommentRecord = {
-      $type: 'com.source-of-clarity.comment',
+      $type: 'com.source-of-clarity.temp.comment',
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
@@ -62,7 +62,7 @@ describe('AT Protocol Lexicon Types', () => {
 
   describe('Multi-line range comment', () => {
     const rangeComment: CommentRecord = {
-      $type: 'com.source-of-clarity.comment',
+      $type: 'com.source-of-clarity.temp.comment',
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
@@ -87,7 +87,7 @@ describe('AT Protocol Lexicon Types', () => {
 
   describe('Reply comment', () => {
     const replyComment: CommentRecord = {
-      $type: 'com.source-of-clarity.comment',
+      $type: 'com.source-of-clarity.temp.comment',
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
@@ -96,11 +96,11 @@ describe('AT Protocol Lexicon Types', () => {
       text: 'Agreed! This prevents unauthorized token transfers.',
       reply: {
         root: {
-          uri: 'at://did:plc:abc123/com.source-of-clarity.comment/3kf5',
+          uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/3kf5',
           cid: 'bafyreiabc123',
         },
         parent: {
-          uri: 'at://did:plc:abc123/com.source-of-clarity.comment/3kf5',
+          uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/3kf5',
           cid: 'bafyreiabc123',
         },
       },
@@ -119,9 +119,9 @@ describe('AT Protocol Lexicon Types', () => {
 
   describe('Like record', () => {
     const likeRecord: LikeRecord = {
-      $type: 'com.source-of-clarity.like',
+      $type: 'com.source-of-clarity.temp.like',
       subject: {
-        uri: 'at://did:plc:abc123/com.source-of-clarity.comment/3kf5',
+        uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/3kf5',
         cid: 'bafyreiabc123',
       },
       createdAt: '2026-01-21T16:30:00.000Z',
@@ -139,7 +139,7 @@ describe('AT Protocol Lexicon Types', () => {
   describe('Validation edge cases', () => {
     it('should reject comment with both lineNumber and lineRange', () => {
       const invalidComment: CommentRecord = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
@@ -177,7 +177,7 @@ describe('AT Protocol Lexicon Types', () => {
 
     it('should reject comment with empty text', () => {
       const emptyTextComment = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
@@ -191,7 +191,7 @@ describe('AT Protocol Lexicon Types', () => {
 
     it('should reject comment with invalid timestamp', () => {
       const invalidTimestamp = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
@@ -205,9 +205,9 @@ describe('AT Protocol Lexicon Types', () => {
 
     it('should reject like with wrong $type', () => {
       const wrongType = {
-        $type: 'com.source-of-clarity.comment',
+        $type: 'com.source-of-clarity.temp.comment',
         subject: {
-          uri: 'at://did:plc:abc123/com.source-of-clarity.comment/3kf5',
+          uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/3kf5',
           cid: 'bafyreiabc123',
         },
         createdAt: '2026-01-21T16:30:00.000Z',

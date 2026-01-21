@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "com.source-of-clarity.like",
+  "id": "com.source-of-clarity.temp.like",
   "defs": {
     "main": {
       "type": "record",
