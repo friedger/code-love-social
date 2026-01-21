@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getCommentsForLine, getReplies, Comment } from "@/data/dummyComments";
+import { getCommentsForLine, getReplies, Comment, extractRkeyFromUri } from "@/data/dummyComments";
 import { getUserByDid, getRelationship, User } from "@/data/dummyUsers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,10 @@ export function CommentThread({ contractId, lineNumber, currentUserDid, onClose 
         ) : (
           comments.map((comment) => (
             <CommentCard
-              key={comment.id}
+              key={comment.uri}
               comment={comment}
               currentUserDid={currentUserDid}
-              onReply={() => setReplyTo(comment.id)}
+              onReply={() => setReplyTo(extractRkeyFromUri(comment.uri) || comment.uri)}
               depth={0}
             />
           ))
@@ -80,7 +80,8 @@ interface CommentCardProps {
 
 function CommentCard({ comment, currentUserDid, onReply, depth }: CommentCardProps) {
   const user = getUserByDid(comment.authorDid);
-  const replies = getReplies(comment.id);
+  const rkey = extractRkeyFromUri(comment.uri);
+  const replies = rkey ? getReplies(rkey) : [];
   const relationship = currentUserDid ? getRelationship(currentUserDid, comment.authorDid) : null;
   const isLiked = currentUserDid && comment.likedBy.includes(currentUserDid);
 
@@ -90,7 +91,7 @@ function CommentCard({ comment, currentUserDid, onReply, depth }: CommentCardPro
     <div className={depth > 0 ? "ml-6 border-l-2 border-border pl-4" : ""}>
       <div className="space-y-2">
         <UserHeader user={user} relationship={relationship} timestamp={comment.createdAt} />
-        <p className="text-sm text-foreground">{comment.content}</p>
+        <p className="text-sm text-foreground">{comment.text}</p>
         <div className="flex items-center gap-4 text-muted-foreground">
           <button className={`flex items-center gap-1 text-xs hover:text-primary ${isLiked ? "text-primary" : ""}`}>
             <Heart className={`h-3 w-3 ${isLiked ? "fill-current" : ""}`} />
@@ -107,7 +108,7 @@ function CommentCard({ comment, currentUserDid, onReply, depth }: CommentCardPro
         <div className="mt-3 space-y-3">
           {replies.map((reply) => (
             <CommentCard
-              key={reply.id}
+              key={reply.uri}
               comment={reply}
               currentUserDid={currentUserDid}
               onReply={onReply}

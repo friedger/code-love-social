@@ -52,7 +52,7 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                         {lineComments.slice(0, 2).map((c) => {
                           const user = getUserByDid(c.authorDid);
                           return (
-                            <Avatar key={c.id} className="h-4 w-4 border border-background">
+                            <Avatar key={c.uri} className="h-4 w-4 border border-background">
                               <AvatarImage src={user?.avatar} />
                               <AvatarFallback className="text-[8px]">
                                 {user?.displayName?.[0]}
