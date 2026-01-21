@@ -434,6 +434,7 @@ serve(async (req) => {
           : null,
         pds_url: stateData.pds_url,
         dpop_private_key_jwk: stateData.dpop_private_key_jwk,
+        auth_server_url: authServerUrl,
       });
 
       if (sessionError) {
