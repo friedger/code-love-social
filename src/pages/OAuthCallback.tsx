@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { initOAuth } from "@/lib/atproto-oauth";
+import { handleCallback, getSession } from "@/lib/atproto-auth";
 import { Loader2 } from "lucide-react";
 
 export default function OAuthCallback() {
@@ -8,19 +8,38 @@ export default function OAuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleCallback = async () => {
+    const processCallback = async () => {
       try {
-        // initOAuth will handle the callback parameters in the URL
-        await initOAuth();
-        // Redirect to home after successful auth
-        navigate("/", { replace: true });
+        // Check for error in URL params
+        const url = new URL(window.location.href);
+        const urlError = url.searchParams.get("error");
+        if (urlError) {
+          const errorDesc = url.searchParams.get("error_description") || urlError;
+          throw new Error(errorDesc);
+        }
+
+        // Handle the callback - this extracts and stores the session token
+        const sessionToken = handleCallback();
+        
+        if (sessionToken) {
+          // Verify the session works
+          const user = await getSession();
+          if (user) {
+            // Success - redirect to home
+            navigate("/", { replace: true });
+            return;
+          }
+        }
+        
+        // If we get here without a session, something went wrong
+        throw new Error("Authentication failed - no session received");
       } catch (err) {
         console.error("OAuth callback error:", err);
         setError(err instanceof Error ? err.message : "Authentication failed");
       }
     };
 
-    handleCallback();
+    processCallback();
   }, [navigate]);
 
   if (error) {

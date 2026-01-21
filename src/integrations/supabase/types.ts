@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      atproto_oauth_state: {
+        Row: {
+          code_verifier: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          return_url: string
+          state: string
+        }
+        Insert: {
+          code_verifier: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          return_url: string
+          state: string
+        }
+        Update: {
+          code_verifier?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          return_url?: string
+          state?: string
+        }
+        Relationships: []
+      }
+      atproto_sessions: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          did: string
+          dpop_private_key_jwk: string | null
+          handle: string
+          id: string
+          pds_url: string
+          refresh_token: string | null
+          session_token: string
+          token_expires_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          did: string
+          dpop_private_key_jwk?: string | null
+          handle: string
+          id?: string
+          pds_url: string
+          refresh_token?: string | null
+          session_token: string
+          token_expires_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          did?: string
+          dpop_private_key_jwk?: string | null
+          handle?: string
+          id?: string
+          pds_url?: string
+          refresh_token?: string | null
+          session_token?: string
+          token_expires_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
