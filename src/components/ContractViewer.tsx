@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Contract } from "@/data/dummyContracts";
-import { getCommentsForLine, Comment } from "@/data/dummyComments";
+import { useComments } from "@/hooks/useComments";
 import { getUserByDid } from "@/data/dummyUsers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { CommentThread } from "./CommentThread";
+import type { Comment } from "@/lexicon/types";
 
 interface ContractViewerProps {
   contract: Contract;
@@ -16,8 +17,17 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const lines = contract.code.split("\n");
 
+  // Fetch all comments for this contract
+  const { data: allComments = [] } = useComments({
+    principal: contract.principal,
+    contractName: contract.name,
+  });
+
+  // Group comments by line number for display
   const getLineComments = (lineNum: number): Comment[] => {
-    return getCommentsForLine(contract.id, lineNum);
+    return allComments.filter(
+      (c) => c.lineNumber === lineNum && !c.parentId
+    );
   };
 
   return (
@@ -55,7 +65,7 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                             <Avatar key={c.uri} className="h-4 w-4 border border-background">
                               <AvatarImage src={user?.avatar} />
                               <AvatarFallback className="text-[8px]">
-                                {user?.displayName?.[0]}
+                                {user?.displayName?.[0] || "?"}
                               </AvatarFallback>
                             </Avatar>
                           );
@@ -86,7 +96,8 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
       {selectedLine && (
         <div className="w-96 shrink-0">
           <CommentThread
-            contractId={contract.id}
+            contractId={contract.name}
+            principal={contract.principal}
             lineNumber={selectedLine}
             currentUserDid={currentUserDid}
             onClose={() => setSelectedLine(null)}
