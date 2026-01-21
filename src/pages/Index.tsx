@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { contracts, Contract } from "@/data/dummyContracts";
-import { User } from "@/data/dummyUsers";
 import { ContractSearch } from "@/components/ContractSearch";
 import { ContractViewer } from "@/components/ContractViewer";
 import { AuthButton } from "@/components/AuthButton";
+import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
 import { FileCode } from "lucide-react";
 
 const Index = () => {
   const [selectedContract, setSelectedContract] = useState<Contract>(contracts[0]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user, isLoading, login, logout } = useAtprotoAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,9 +23,10 @@ const Index = () => {
             </div>
           </div>
           <AuthButton
-            currentUser={currentUser}
-            onLogin={setCurrentUser}
-            onLogout={() => setCurrentUser(null)}
+            user={user}
+            isLoading={isLoading}
+            onLogin={login}
+            onLogout={logout}
           />
         </div>
       </header>
@@ -46,7 +47,7 @@ const Index = () => {
                   <h2 className="text-xl font-semibold text-foreground">{selectedContract.name}</h2>
                   <p className="text-muted-foreground">{selectedContract.description}</p>
                 </div>
-                <ContractViewer contract={selectedContract} currentUserDid={currentUser?.did} />
+                <ContractViewer contract={selectedContract} currentUserDid={user?.did} />
               </>
             ) : (
               <div className="flex items-center justify-center h-96 text-muted-foreground">
