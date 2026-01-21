@@ -1,30 +1,10 @@
-// Dummy users for the AT Protocol social features
-export interface User {
-  did: string; // AT Protocol DID
-  handle: string;
-  displayName: string;
-  avatar: string;
-  bio?: string;
-  reputation: number; // 0-100
-  badges: Badge[];
-  followersCount: number;
-  followingCount: number;
-  commentsCount: number;
-}
+import type { Badge, Relationship, LocalUserData, UserProfile, AppUser } from '@/lexicon/types';
 
-export interface Badge {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-}
+// Re-export types for backward compatibility
+export type { Badge, Relationship, UserProfile, LocalUserData, AppUser } from '@/lexicon/types';
 
-export interface Relationship {
-  following: boolean;
-  followedBy: boolean;
-  muted: boolean;
-  blocked: boolean;
-}
+// Legacy User type alias for backward compatibility
+export type User = AppUser;
 
 export const badges: Badge[] = [
   { id: "verified", name: "Verified Developer", icon: "✓", color: "blue" },
@@ -34,13 +14,13 @@ export const badges: Badge[] = [
   { id: "educator", name: "Educator", icon: "📚", color: "orange" },
 ];
 
-export const users: User[] = [
+export const users: AppUser[] = [
   {
     did: "did:plc:z72i7hdynmk6r22z27h6tvur",
     handle: "alice.bsky.social",
     displayName: "Alice Chen",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=alice",
-    bio: "Smart contract security researcher. Building on Stacks.",
+    description: "Smart contract security researcher. Building on Stacks.",
     reputation: 92,
     badges: [badges[0], badges[3]],
     followersCount: 2341,
@@ -52,7 +32,7 @@ export const users: User[] = [
     handle: "bob.stacks.dev",
     displayName: "Bob Martinez",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bob",
-    bio: "DeFi developer. Creator of StackSwap.",
+    description: "DeFi developer. Creator of StackSwap.",
     reputation: 87,
     badges: [badges[1], badges[2]],
     followersCount: 1892,
@@ -64,7 +44,7 @@ export const users: User[] = [
     handle: "carol.clarity.dev",
     displayName: "Carol Williams",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=carol",
-    bio: "Clarity educator and documentation writer.",
+    description: "Clarity educator and documentation writer.",
     reputation: 78,
     badges: [badges[4]],
     followersCount: 967,
@@ -76,7 +56,7 @@ export const users: User[] = [
     handle: "dave.btc.social",
     displayName: "Dave Kumar",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=dave",
-    bio: "NFT marketplace developer. Building on Bitcoin.",
+    description: "NFT marketplace developer. Building on Bitcoin.",
     reputation: 71,
     badges: [badges[2]],
     followersCount: 534,
@@ -88,7 +68,7 @@ export const users: User[] = [
     handle: "eve.crypto.social",
     displayName: "Eve Thompson",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=eve",
-    bio: "Protocol researcher. Web3 enthusiast.",
+    description: "Protocol researcher. Web3 enthusiast.",
     reputation: 65,
     badges: [],
     followersCount: 287,
@@ -100,7 +80,7 @@ export const users: User[] = [
     handle: "frank.dev.social",
     displayName: "Frank Lee",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=frank",
-    bio: "Full-stack blockchain developer.",
+    description: "Full-stack blockchain developer.",
     reputation: 58,
     badges: [badges[1]],
     followersCount: 412,
@@ -138,10 +118,10 @@ export function getRelationship(currentUserDid: string, otherUserDid: string): R
   };
 }
 
-export function getUserByDid(did: string): User | undefined {
+export function getUserByDid(did: string): AppUser | undefined {
   return users.find((u) => u.did === did);
 }
 
-export function getUserByHandle(handle: string): User | undefined {
+export function getUserByHandle(handle: string): AppUser | undefined {
   return users.find((u) => u.handle === handle);
 }

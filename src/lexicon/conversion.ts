@@ -1,46 +1,16 @@
-import type { CommentRecord, ContractRef, StrongRef, LikeRecord } from './types';
+import type { CommentRecord, ContractRef, StrongRef, LikeRecord, Comment } from './types';
 import { LEXICON_COMMENT, LEXICON_LIKE } from './types';
 
 /**
- * Legacy Comment interface used in the app
- * This matches the structure in src/data/dummyComments.ts
- */
-export interface LegacyComment {
-  id: string;
-  uri: string;
-  cid: string;
-  contractId: string;
-  contract?: ContractRef;
-  lineNumber?: number;
-  lineRange?: { start: number; end: number };
-  authorDid: string;
-  content: string;
-  createdAt: string;
-  updatedAt?: string;
-  likes: number;
-  likedBy: string[];
-  parentId?: string;
-  reply?: {
-    root: StrongRef;
-    parent: StrongRef;
-  };
-  replyCount: number;
-}
-
-/**
- * Options for converting a CommentRecord to a LegacyComment
+ * Options for converting a CommentRecord to a Comment
  */
 export interface FromRecordOptions {
-  /** The local ID for the comment */
-  id: string;
   /** The DID of the comment author */
   authorDid: string;
   /** The AT URI of the record */
   uri: string;
   /** The CID of the record */
   cid: string;
-  /** Local contract ID mapping */
-  contractId: string;
   /** Initial like count */
   likes?: number;
   /** Initial likedBy array */
@@ -52,19 +22,13 @@ export interface FromRecordOptions {
 }
 
 /**
- * Convert a LegacyComment to a CommentRecord for AT Protocol storage
+ * Convert a Comment to a CommentRecord for AT Protocol storage
  */
-export function toCommentRecord(comment: LegacyComment): CommentRecord {
-  // Use existing contract ref or derive from contractId
-  const subject: ContractRef = comment.contract ?? {
-    principal: 'SP000000000000000000000000000000',
-    contractName: comment.contractId,
-  };
-
+export function toCommentRecord(comment: Comment): CommentRecord {
   const record: CommentRecord = {
     $type: LEXICON_COMMENT,
-    subject,
-    text: comment.content,
+    subject: comment.subject,
+    text: comment.text,
     createdAt: comment.createdAt,
   };
 
@@ -86,20 +50,18 @@ export function toCommentRecord(comment: LegacyComment): CommentRecord {
 }
 
 /**
- * Convert a CommentRecord from AT Protocol to a LegacyComment for local use
+ * Convert a CommentRecord from AT Protocol to a Comment for local use
  */
 export function fromCommentRecord(
   record: CommentRecord,
   options: FromRecordOptions
-): LegacyComment {
-  const comment: LegacyComment = {
-    id: options.id,
+): Comment {
+  const comment: Comment = {
     uri: options.uri,
     cid: options.cid,
-    contractId: options.contractId,
-    contract: record.subject,
+    subject: record.subject,
     authorDid: options.authorDid,
-    content: record.text,
+    text: record.text,
     createdAt: record.createdAt,
     likes: options.likes ?? 0,
     likedBy: options.likedBy ?? [],
@@ -167,4 +129,35 @@ export function createLikeRecord(subject: StrongRef): LikeRecord {
     subject,
     createdAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Generate an AT Protocol TID (timestamp ID) for record keys
+ * Base32 sortable timestamp in microseconds
+ */
+export function generateTID(): string {
+  const now = Date.now() * 1000; // Convert to microseconds
+  // Use base32 encoding (0-9, a-v) for AT Protocol TIDs
+  const chars = '234567abcdefghijklmnopqrstuvwxyz';
+  let tid = '';
+  let n = now;
+  
+  for (let i = 0; i < 13; i++) {
+    tid = chars[n & 31] + tid;
+    n = Math.floor(n / 32);
+  }
+  
+  return tid;
+}
+
+/**
+ * Extract parent ID from a reply reference URI
+ */
+export function extractParentIdFromUri(uri: string): string | undefined {
+  // AT URI format: at://did:plc:xxx/collection/rkey
+  const match = uri.match(/at:\/\/([^/]+)\/([^/]+)\/([^/]+)/);
+  if (match) {
+    return match[3]; // Return the rkey as parent ID
+  }
+  return undefined;
 }

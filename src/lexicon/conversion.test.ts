@@ -4,32 +4,31 @@ import {
   fromCommentRecord,
   createCommentRecord,
   createLikeRecord,
-  type LegacyComment,
+  generateTID,
+  extractParentIdFromUri,
 } from './conversion';
 import { isValidCommentRecord, isValidLikeRecord } from './validation';
-import type { CommentRecord } from './types';
+import type { CommentRecord, Comment } from './types';
 
 describe('Conversion helpers', () => {
   describe('toCommentRecord', () => {
-    it('should convert a legacy contract-level comment', () => {
-      const legacy: LegacyComment = {
-        id: 'comment-1',
+    it('should convert a contract-level comment', () => {
+      const comment: Comment = {
         uri: 'at://did:plc:user1/com.source-of-clarity.comment/abc123',
         cid: 'bafyrei123',
-        contractId: 'alex-vault',
-        contract: {
+        subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
         },
         authorDid: 'did:plc:user1',
-        content: 'Great contract architecture!',
+        text: 'Great contract architecture!',
         createdAt: '2026-01-21T15:30:00.000Z',
         likes: 5,
         likedBy: ['did:plc:user2'],
         replyCount: 0,
       };
 
-      const record = toCommentRecord(legacy);
+      const record = toCommentRecord(comment);
 
       expect(record.$type).toBe('com.source-of-clarity.comment');
       expect(record.subject.principal).toBe('SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9');
@@ -40,75 +39,69 @@ describe('Conversion helpers', () => {
       expect(isValidCommentRecord(record)).toBe(true);
     });
 
-    it('should convert a legacy line-level comment', () => {
-      const legacy: LegacyComment = {
-        id: 'comment-2',
+    it('should convert a line-level comment', () => {
+      const comment: Comment = {
         uri: 'at://did:plc:user1/com.source-of-clarity.comment/def456',
         cid: 'bafyrei456',
-        contractId: 'alex-vault',
-        contract: {
+        subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
         },
         lineNumber: 42,
         authorDid: 'did:plc:user1',
-        content: 'This line needs attention.',
+        text: 'This line needs attention.',
         createdAt: '2026-01-21T15:30:00.000Z',
         likes: 2,
         likedBy: [],
         replyCount: 1,
       };
 
-      const record = toCommentRecord(legacy);
+      const record = toCommentRecord(comment);
 
       expect(record.lineNumber).toBe(42);
       expect(record.lineRange).toBeUndefined();
       expect(isValidCommentRecord(record)).toBe(true);
     });
 
-    it('should convert a legacy range comment', () => {
-      const legacy: LegacyComment = {
-        id: 'comment-3',
+    it('should convert a range comment', () => {
+      const comment: Comment = {
         uri: 'at://did:plc:user1/com.source-of-clarity.comment/ghi789',
         cid: 'bafyrei789',
-        contractId: 'alex-vault',
-        contract: {
+        subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
         },
         lineRange: { start: 10, end: 20 },
         authorDid: 'did:plc:user1',
-        content: 'This section handles swaps.',
+        text: 'This section handles swaps.',
         createdAt: '2026-01-21T15:30:00.000Z',
         likes: 0,
         likedBy: [],
         replyCount: 0,
       };
 
-      const record = toCommentRecord(legacy);
+      const record = toCommentRecord(comment);
 
       expect(record.lineNumber).toBeUndefined();
       expect(record.lineRange).toEqual({ start: 10, end: 20 });
       expect(isValidCommentRecord(record)).toBe(true);
     });
 
-    it('should convert a legacy reply comment', () => {
-      const legacy: LegacyComment = {
-        id: 'comment-4',
+    it('should convert a reply comment', () => {
+      const comment: Comment = {
         uri: 'at://did:plc:user2/com.source-of-clarity.comment/reply1',
         cid: 'bafyreireply1',
-        contractId: 'alex-vault',
-        contract: {
+        subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
         },
         lineNumber: 42,
         authorDid: 'did:plc:user2',
-        content: 'I agree with this observation.',
+        text: 'I agree with this observation.',
         createdAt: '2026-01-21T16:00:00.000Z',
         likes: 1,
         likedBy: ['did:plc:user1'],
-        parentId: 'comment-2',
+        parentId: 'def456',
         reply: {
           root: {
             uri: 'at://did:plc:user1/com.source-of-clarity.comment/def456',
@@ -122,39 +115,17 @@ describe('Conversion helpers', () => {
         replyCount: 0,
       };
 
-      const record = toCommentRecord(legacy);
+      const record = toCommentRecord(comment);
 
       expect(record.reply).toBeDefined();
       expect(record.reply?.root.uri).toBe('at://did:plc:user1/com.source-of-clarity.comment/def456');
       expect(record.reply?.parent.cid).toBe('bafyrei456');
       expect(isValidCommentRecord(record)).toBe(true);
     });
-
-    it('should fall back to contractId when contract ref is missing', () => {
-      const legacy: LegacyComment = {
-        id: 'comment-5',
-        uri: 'at://did:plc:user1/com.source-of-clarity.comment/abc',
-        cid: 'bafyrei',
-        contractId: 'my-contract',
-        // No contract field
-        authorDid: 'did:plc:user1',
-        content: 'Test comment',
-        createdAt: '2026-01-21T15:30:00.000Z',
-        likes: 0,
-        likedBy: [],
-        replyCount: 0,
-      };
-
-      const record = toCommentRecord(legacy);
-
-      expect(record.subject.contractName).toBe('my-contract');
-      // Falls back to placeholder principal
-      expect(record.subject.principal).toBe('SP000000000000000000000000000000');
-    });
   });
 
   describe('fromCommentRecord', () => {
-    it('should convert a CommentRecord to LegacyComment', () => {
+    it('should convert a CommentRecord to Comment', () => {
       const record: CommentRecord = {
         $type: 'com.source-of-clarity.comment',
         subject: {
@@ -166,25 +137,23 @@ describe('Conversion helpers', () => {
         createdAt: '2026-01-21T15:30:00.000Z',
       };
 
-      const legacy = fromCommentRecord(record, {
-        id: 'local-id-123',
+      const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:author1',
         uri: 'at://did:plc:author1/com.source-of-clarity.comment/abc',
         cid: 'bafyrei123',
-        contractId: 'alex-vault',
         likes: 10,
         likedBy: ['did:plc:user1', 'did:plc:user2'],
         replyCount: 3,
       });
 
-      expect(legacy.id).toBe('local-id-123');
-      expect(legacy.authorDid).toBe('did:plc:author1');
-      expect(legacy.content).toBe('The asserts! check here is critical for security.');
-      expect(legacy.lineNumber).toBe(35);
-      expect(legacy.contract).toEqual(record.subject);
-      expect(legacy.likes).toBe(10);
-      expect(legacy.likedBy).toHaveLength(2);
-      expect(legacy.replyCount).toBe(3);
+      expect(comment.uri).toBe('at://did:plc:author1/com.source-of-clarity.comment/abc');
+      expect(comment.authorDid).toBe('did:plc:author1');
+      expect(comment.text).toBe('The asserts! check here is critical for security.');
+      expect(comment.lineNumber).toBe(35);
+      expect(comment.subject).toEqual(record.subject);
+      expect(comment.likes).toBe(10);
+      expect(comment.likedBy).toHaveLength(2);
+      expect(comment.replyCount).toBe(3);
     });
 
     it('should convert a reply CommentRecord with parentId', () => {
@@ -208,18 +177,16 @@ describe('Conversion helpers', () => {
         createdAt: '2026-01-21T16:00:00.000Z',
       };
 
-      const legacy = fromCommentRecord(record, {
-        id: 'reply-id',
+      const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:replier',
         uri: 'at://did:plc:replier/com.source-of-clarity.comment/reply',
         cid: 'bafyreireply',
-        contractId: 'alex-vault',
         parentId: 'parent-local-id',
       });
 
-      expect(legacy.reply).toBeDefined();
-      expect(legacy.parentId).toBe('parent-local-id');
-      expect(legacy.reply?.root.uri).toContain('root');
+      expect(comment.reply).toBeDefined();
+      expect(comment.parentId).toBe('parent-local-id');
+      expect(comment.reply?.root.uri).toContain('root');
     });
 
     it('should use defaults for optional fields', () => {
@@ -233,19 +200,17 @@ describe('Conversion helpers', () => {
         createdAt: '2026-01-21T15:30:00.000Z',
       };
 
-      const legacy = fromCommentRecord(record, {
-        id: 'id',
+      const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:test',
         uri: 'at://did:plc:test/com.source-of-clarity.comment/x',
         cid: 'cid',
-        contractId: 'test',
       });
 
-      expect(legacy.likes).toBe(0);
-      expect(legacy.likedBy).toEqual([]);
-      expect(legacy.replyCount).toBe(0);
-      expect(legacy.lineNumber).toBeUndefined();
-      expect(legacy.lineRange).toBeUndefined();
+      expect(comment.likes).toBe(0);
+      expect(comment.likedBy).toEqual([]);
+      expect(comment.replyCount).toBe(0);
+      expect(comment.lineNumber).toBeUndefined();
+      expect(comment.lineRange).toBeUndefined();
     });
   });
 
@@ -318,6 +283,34 @@ describe('Conversion helpers', () => {
       expect(record.subject.cid).toBe('bafyreiabc123xyz');
       expect(record.createdAt).toBeDefined();
       expect(isValidLikeRecord(record)).toBe(true);
+    });
+  });
+
+  describe('generateTID', () => {
+    it('should generate a 13-character TID', () => {
+      const tid = generateTID();
+      expect(tid).toHaveLength(13);
+    });
+
+    it('should generate unique TIDs', () => {
+      const tid1 = generateTID();
+      const tid2 = generateTID();
+      // They might be the same if generated in the same microsecond, so we check they're strings
+      expect(typeof tid1).toBe('string');
+      expect(typeof tid2).toBe('string');
+    });
+  });
+
+  describe('extractParentIdFromUri', () => {
+    it('should extract rkey from AT URI', () => {
+      const uri = 'at://did:plc:abc123/com.source-of-clarity.comment/xyz789';
+      const parentId = extractParentIdFromUri(uri);
+      expect(parentId).toBe('xyz789');
+    });
+
+    it('should return undefined for invalid URI', () => {
+      const parentId = extractParentIdFromUri('invalid-uri');
+      expect(parentId).toBeUndefined();
     });
   });
 });
