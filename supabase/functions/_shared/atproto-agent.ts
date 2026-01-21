@@ -206,14 +206,11 @@ export async function createAuthenticatedAgent(session: SessionData): Promise<Ag
   // Create custom fetch with DPoP support
   const dpopFetch = createDPoPFetch(privateKey, publicJwk, session.access_token);
   
-  // Create agent with custom fetch
+  // Create agent with custom fetch passed in constructor
   const agent = new Agent({
     service: session.pds_url,
+    fetch: dpopFetch,
   });
-  
-  // Override the agent's fetch to use DPoP
-  // @ts-ignore - accessing private property for DPoP integration
-  agent.api.xrpc.fetch = dpopFetch;
   
   // Set the session DID for the agent
   // @ts-ignore - setting session for authenticated requests
