@@ -1,7 +1,8 @@
 import { BrowserOAuthClient } from "@atproto/oauth-client-browser";
 
-// For development, we use the loopback client metadata
-// In production, you'd host client-metadata.json at your domain
+// Get the Supabase URL for the edge function
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://uxaxgrdxikvligkjyyxz.supabase.co";
+
 const getClientMetadata = () => {
   const origin = window.location.origin;
   
@@ -22,9 +23,12 @@ const getClientMetadata = () => {
     };
   }
   
-  // For production, use the hosted client metadata
+  // For non-localhost environments, use the edge function to serve client metadata
+  // This avoids SPA routing issues that cause "unexpected redirect" errors
+  const clientMetadataUrl = `${SUPABASE_URL}/functions/v1/client-metadata?origin=${encodeURIComponent(origin)}`;
+  
   return {
-    client_id: `${origin}/client-metadata.json`,
+    client_id: clientMetadataUrl,
     redirect_uris: [origin + "/oauth/callback"] as [string, ...string[]],
     scope: "atproto transition:generic",
     grant_types: ["authorization_code", "refresh_token"] as ["authorization_code", "refresh_token"],
