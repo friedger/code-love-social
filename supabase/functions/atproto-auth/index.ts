@@ -141,15 +141,52 @@ async function resolveHandle(handle: string): Promise<{ did: string; pdsUrl: str
   return { did, pdsUrl };
 }
 
-// Get authorization server metadata
-async function getAuthServerMetadata(pdsUrl: string): Promise<{
+// Get authorization server URL from PDS (Resource Server)
+// The PDS is a Resource Server, not an Authorization Server.
+// We need to discover the actual auth server from the protected resource metadata.
+async function getAuthorizationServerUrl(pdsUrl: string): Promise<string> {
+  // First, try to get the protected resource metadata from the PDS
+  try {
+    const resourceMetaUrl = `${pdsUrl}/.well-known/oauth-protected-resource`;
+    const response = await fetch(resourceMetaUrl);
+    
+    if (response.ok) {
+      const resourceMeta = await response.json();
+      // The authorization_servers array contains the auth server(s)
+      if (resourceMeta.authorization_servers && resourceMeta.authorization_servers.length > 0) {
+        console.log(`Discovered auth server: ${resourceMeta.authorization_servers[0]} from PDS: ${pdsUrl}`);
+        return resourceMeta.authorization_servers[0];
+      }
+    }
+  } catch (e) {
+    console.log(`Failed to fetch protected resource metadata from ${pdsUrl}:`, e);
+  }
+  
+  // Fallback: Check if this PDS serves as its own auth server
+  try {
+    const directCheck = await fetch(`${pdsUrl}/.well-known/oauth-authorization-server`);
+    if (directCheck.ok) {
+      console.log(`PDS ${pdsUrl} is also an authorization server`);
+      return pdsUrl;
+    }
+  } catch (e) {
+    console.log(`PDS ${pdsUrl} is not an authorization server`);
+  }
+  
+  // Final fallback: Use bsky.social as the default auth server for Bluesky network
+  console.log(`Using default auth server: https://bsky.social`);
+  return "https://bsky.social";
+}
+
+// Get authorization server metadata from the AUTHORIZATION SERVER (not PDS)
+async function getAuthServerMetadata(authServerUrl: string): Promise<{
   authorization_endpoint: string;
   token_endpoint: string;
   pushed_authorization_request_endpoint?: string;
 }> {
-  const response = await fetch(`${pdsUrl}/.well-known/oauth-authorization-server`);
+  const response = await fetch(`${authServerUrl}/.well-known/oauth-authorization-server`);
   if (!response.ok) {
-    throw new Error(`Failed to get auth server metadata from ${pdsUrl}`);
+    throw new Error(`Failed to get auth server metadata from ${authServerUrl}`);
   }
   return response.json();
 }
@@ -203,8 +240,12 @@ serve(async (req) => {
       // Resolve handle to DID and PDS
       const { did, pdsUrl } = await resolveHandle(handle);
       
-      // Get auth server metadata
-      const authMeta = await getAuthServerMetadata(pdsUrl);
+      // Discover the Authorization Server from the PDS (Resource Server)
+      const authServerUrl = await getAuthorizationServerUrl(pdsUrl);
+      console.log(`Using auth server: ${authServerUrl} for PDS: ${pdsUrl}`);
+      
+      // Get auth server metadata from the AUTHORIZATION SERVER
+      const authMeta = await getAuthServerMetadata(authServerUrl);
       
       // Generate PKCE
       const { verifier, challenge } = await generatePKCE();
@@ -215,7 +256,7 @@ serve(async (req) => {
       // Generate state
       const state = generateRandomString(32);
       
-      // Store state in database
+      // Store state in database (including auth_server_url for callback)
       const { error: stateError } = await supabase.from("atproto_oauth_state").insert({
         state,
         code_verifier: verifier,
@@ -224,6 +265,7 @@ serve(async (req) => {
         dpop_public_key_jwk: JSON.stringify(publicJwk),
         did,
         pds_url: pdsUrl,
+        auth_server_url: authServerUrl,
       });
 
       if (stateError) {
@@ -289,8 +331,9 @@ serve(async (req) => {
       // Delete used state
       await supabase.from("atproto_oauth_state").delete().eq("state", state);
 
-      // Get auth server metadata
-      const authMeta = await getAuthServerMetadata(stateData.pds_url);
+      // Get auth server metadata from the stored authorization server URL
+      const authServerUrl = stateData.auth_server_url || await getAuthorizationServerUrl(stateData.pds_url);
+      const authMeta = await getAuthServerMetadata(authServerUrl);
       
       // Reconstruct DPoP keys
       const privateJwk = JSON.parse(stateData.dpop_private_key_jwk);
