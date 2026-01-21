@@ -101,6 +101,81 @@ export type Database = {
         }
         Relationships: []
       }
+      comments_index: {
+        Row: {
+          author_did: string
+          cid: string
+          contract_name: string
+          created_at: string | null
+          id: string
+          line_number: number | null
+          line_range_end: number | null
+          line_range_start: number | null
+          parent_uri: string | null
+          principal: string
+          text: string
+          uri: string
+        }
+        Insert: {
+          author_did: string
+          cid: string
+          contract_name: string
+          created_at?: string | null
+          id?: string
+          line_number?: number | null
+          line_range_end?: number | null
+          line_range_start?: number | null
+          parent_uri?: string | null
+          principal: string
+          text: string
+          uri: string
+        }
+        Update: {
+          author_did?: string
+          cid?: string
+          contract_name?: string
+          created_at?: string | null
+          id?: string
+          line_number?: number | null
+          line_range_end?: number | null
+          line_range_start?: number | null
+          parent_uri?: string | null
+          principal?: string
+          text?: string
+          uri?: string
+        }
+        Relationships: []
+      }
+      likes_index: {
+        Row: {
+          author_did: string
+          cid: string
+          created_at: string | null
+          id: string
+          subject_cid: string
+          subject_uri: string
+          uri: string
+        }
+        Insert: {
+          author_did: string
+          cid: string
+          created_at?: string | null
+          id?: string
+          subject_cid: string
+          subject_uri: string
+          uri: string
+        }
+        Update: {
+          author_did?: string
+          cid?: string
+          created_at?: string | null
+          id?: string
+          subject_cid?: string
+          subject_uri?: string
+          uri?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
