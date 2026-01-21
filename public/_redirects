@@ -1,0 +1,5 @@
+# Serve client-metadata.json directly without SPA redirect
+/client-metadata.json    /client-metadata.json   200
+
+# SPA fallback for all other routes
+/*    /index.html   200

@@ -2,6 +2,7 @@
   "client_id": "https://id-preview--1b195c5a-8f47-408d-a1ce-3f2eea104bbf.lovable.app/client-metadata.json",
   "client_name": "Clarity Social",
   "client_uri": "https://id-preview--1b195c5a-8f47-408d-a1ce-3f2eea104bbf.lovable.app",
+  "logo_uri": "https://id-preview--1b195c5a-8f47-408d-a1ce-3f2eea104bbf.lovable.app/favicon.ico",
   "redirect_uris": [
     "https://id-preview--1b195c5a-8f47-408d-a1ce-3f2eea104bbf.lovable.app/oauth/callback"
   ],
