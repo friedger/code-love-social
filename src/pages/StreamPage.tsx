@@ -6,14 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, FileCode, ArrowLeft, Rss } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png";
 import { formatDistanceToNow } from "date-fns";
+import { PageHeader } from "@/components/PageHeader";
 
 const StreamPage = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["comments-stream"],
     queryFn: () => getCommentsStream(50),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   const comments = data?.comments || [];
@@ -21,21 +21,9 @@ const StreamPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Source of Clarity" className="h-8 w-8" />
-            <div className="hidden sm:block">
-              <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
-              <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
-            </div>
-          </Link>
-        </div>
-      </header>
+      <PageHeader />
 
       <main className="container mx-auto px-4 py-6 max-w-3xl">
-        {/* Back button */}
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -94,7 +82,7 @@ const StreamPage = () => {
                 <Card key={comment.uri} className="hover:bg-accent/50 transition-colors">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <Link to={`/profile/${comment.authorDid}`}>
+                      <Link to={`/profile/${profile?.handle || comment.authorDid}`}>
                         <Avatar className="h-10 w-10 hover:ring-2 hover:ring-primary transition-all">
                           <AvatarImage src={profile?.avatar} alt={profile?.displayName || profile?.handle} />
                           <AvatarFallback>
@@ -105,7 +93,7 @@ const StreamPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <Link
-                            to={`/profile/${comment.authorDid}`}
+                            to={`/profile/${profile?.handle || comment.authorDid}`}
                             className="font-medium text-foreground hover:underline truncate"
                           >
                             {profile?.displayName || profile?.handle || "Unknown"}
