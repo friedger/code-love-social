@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Contract } from "@/data/dummyContracts";
+import { Contract } from "@/types/contract";
 import { useComments } from "@/hooks/useComments";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ interface ContractViewerProps {
 
 export function ContractViewer({ contract, currentUserDid }: ContractViewerProps) {
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
-  const lines = contract.code.split("\n");
+  const lines = contract.source_code.split("\n");
 
   // Fetch all comments for this contract
   const { data } = useComments({
