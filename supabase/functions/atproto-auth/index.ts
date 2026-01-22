@@ -199,6 +199,8 @@ const OAUTH_SCOPES = [
   "repo:*?collection=com.source-of-clarity.temp.comment&action=create,delete",
   // Reactions: create and delete
   "repo:*?collection=com.source-of-clarity.temp.reaction&action=create,delete",
+  // Follow/unfollow: create and delete
+  "repo:*?collection=app.bsky.graph.follow&action=create,delete",
 ].join(" ");
 
 // Get the client metadata (this function's URL serves as client_id)
@@ -567,7 +569,26 @@ serve(async (req) => {
           }
         }
 
-        // Return basic info if profile fetch fails
+        // Fallback to public Bluesky API if PDS fetch fails
+        try {
+          const publicApiUrl = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${session.did}`;
+          const publicResponse = await fetch(publicApiUrl);
+          if (publicResponse.ok) {
+            const publicProfile = await publicResponse.json();
+            return new Response(JSON.stringify({
+              did: session.did,
+              handle: publicProfile.handle,
+              displayName: publicProfile.displayName || publicProfile.handle,
+              avatar: publicProfile.avatar,
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        } catch (e) {
+          console.error("Public API fallback failed:", e);
+        }
+
+        // Return basic info if all profile fetches fail
         return new Response(JSON.stringify({
           did: session.did,
           handle: session.did,
