@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { useComments, useCreateComment, useLikeComment, getRepliesFromComments, getRootComments, ProfileData } from "@/hooks/useComments";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,19 @@ interface ContractCommentsProps {
   currentUserDid?: string;
 }
 
-export function ContractComments({ contractId, principal, txId, currentUserDid }: ContractCommentsProps) {
+export interface ContractCommentsRef {
+  focus: () => void;
+}
+
+export const ContractComments = forwardRef<ContractCommentsRef, ContractCommentsProps>(
+  function ContractComments({ contractId, principal, txId, currentUserDid }, ref) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      textareaRef.current?.focus();
+    },
+  }));
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
 
@@ -98,6 +110,7 @@ export function ContractComments({ contractId, principal, txId, currentUserDid }
           </div>
         )}
         <Textarea
+          ref={textareaRef}
           placeholder={replyTo ? "Write a reply..." : "Comment on this contract..."}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -131,7 +144,7 @@ export function ContractComments({ contractId, principal, txId, currentUserDid }
       </div>
     </Card>
   );
-}
+});
 
 interface CommentCardProps {
   comment: Comment;

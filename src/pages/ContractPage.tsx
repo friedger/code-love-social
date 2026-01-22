@@ -1,13 +1,16 @@
+import { useRef, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
-import { ContractViewer } from "@/components/ContractViewer";
+import { ContractViewer, type ContractViewerRef } from "@/components/ContractViewer";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
 import { Loader2, ArrowLeft, AlertCircle, ExternalLink, SmilePlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { ContractIdenticon } from "@/components/ContractIdenticon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatContractId, getContractPath } from "@/lib/utils";
+import { formatContractId, getContractPath, cn } from "@/lib/utils";
+import { useContractReactions, useAddContractReaction } from "@/hooks/useContractReactions";
+import { toast } from "sonner";
 
 const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as const;
 
@@ -15,6 +18,8 @@ const ContractPage = () => {
   const { contractId } = useParams<{ contractId: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAtprotoAuth();
+  const viewerRef = useRef<ContractViewerRef>(null);
+  const [reactionPopoverOpen, setReactionPopoverOpen] = useState(false);
 
   // Parse principal.name format
   const lastDotIndex = contractId?.lastIndexOf(".") ?? -1;
@@ -34,6 +39,38 @@ const ContractPage = () => {
     : undefined;
 
   const { data: contract, isLoading, error } = useContract(principal, name);
+  const { data: reactions } = useContractReactions(principal, name);
+  const addReactionMutation = useAddContractReaction();
+
+  const handleCommentClick = () => {
+    viewerRef.current?.focusComments();
+  };
+
+  const handleReaction = async (emoji: string) => {
+    if (!user) {
+      toast.error("Sign in to react");
+      return;
+    }
+    if (!contract) return;
+
+    try {
+      await addReactionMutation.mutateAsync({
+        principal: contract.principal,
+        contractName: contract.name,
+        txId: contract.tx_id || undefined,
+        emoji,
+      });
+      setReactionPopoverOpen(false);
+    } catch (err) {
+      console.error("Failed to add reaction:", err);
+      toast.error("Failed to add reaction");
+    }
+  };
+
+  // Get sorted reactions with counts > 0
+  const reactionEntries = Object.entries(reactions?.reactions || {}).filter(
+    ([, count]) => count > 0
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,9 +128,31 @@ const ContractPage = () => {
                 </div>
               </div>
 
-              {/* Right: Action buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Popover>
+              {/* Right: Reactions display + action buttons */}
+              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                {/* Show aggregated reactions */}
+                {reactionEntries.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    {reactionEntries.map(([emoji, count]) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReaction(emoji)}
+                        disabled={addReactionMutation.isPending}
+                        className={cn(
+                          "inline-flex items-center gap-0.5 px-2 py-1 rounded text-sm transition-colors",
+                          reactions?.userReaction?.emoji === emoji
+                            ? "bg-primary/20 text-primary"
+                            : "bg-muted/50 hover:bg-muted"
+                        )}
+                      >
+                        <span>{emoji}</span>
+                        <span className="text-xs">{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <Popover open={reactionPopoverOpen} onOpenChange={setReactionPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1.5">
                       <SmilePlus className="h-4 w-4" />
@@ -105,8 +164,12 @@ const ContractPage = () => {
                       {REACTION_EMOJIS.map((emoji) => (
                         <button
                           key={emoji}
-                          className="p-2 hover:bg-muted rounded text-xl"
-                          onClick={() => {/* TODO: Add contract-level reaction */}}
+                          className={cn(
+                            "p-2 hover:bg-muted rounded text-xl transition-colors",
+                            reactions?.userReaction?.emoji === emoji && "bg-primary/20"
+                          )}
+                          onClick={() => handleReaction(emoji)}
+                          disabled={addReactionMutation.isPending}
                         >
                           {emoji}
                         </button>
@@ -115,13 +178,19 @@ const ContractPage = () => {
                   </PopoverContent>
                 </Popover>
 
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={handleCommentClick}
+                >
                   <MessageSquare className="h-4 w-4" />
                   <span className="hidden sm:inline">Comment</span>
                 </Button>
               </div>
             </div>
             <ContractViewer
+              ref={viewerRef}
               contract={contract}
               currentUserDid={user?.did}
               initialSelectedLine={initialLine}

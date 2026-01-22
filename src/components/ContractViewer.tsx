@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Contract } from "@/types/contract";
 import { useComments } from "@/hooks/useComments";
 import { useClarityHighlighter } from "@/hooks/useClarityHighlighter";
@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { CommentThread } from "./CommentThread";
-import { ContractComments } from "./ContractComments";
+import { ContractComments, type ContractCommentsRef } from "./ContractComments";
 import { HighlightedCodeLine } from "./HighlightedCodeLine";
 import type { Comment } from "@/lexicon/types";
 
@@ -17,15 +17,32 @@ interface ContractViewerProps {
   initialLineRange?: { start: number; end: number };
 }
 
-export function ContractViewer({
-  contract,
-  currentUserDid,
-  initialSelectedLine,
-  initialLineRange,
-}: ContractViewerProps) {
+export interface ContractViewerRef {
+  focusComments: () => void;
+}
+
+export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>(
+  function ContractViewer({
+    contract,
+    currentUserDid,
+    initialSelectedLine,
+    initialLineRange,
+  }, ref) {
   const [selectedLine, setSelectedLine] = useState<number | null>(
     initialSelectedLine ?? initialLineRange?.start ?? null
   );
+  
+  const contractCommentsRef = useRef<ContractCommentsRef>(null);
+  
+  useImperativeHandle(ref, () => ({
+    focusComments: () => {
+      const section = document.getElementById("contract-comments-section");
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        contractCommentsRef.current?.focus();
+      }, 500);
+    },
+  }));
 
   // Scroll to line on mount when deep-linked
   useEffect(() => {
@@ -163,12 +180,15 @@ export function ContractViewer({
       </div>
 
       {/* Contract-level comments section */}
-      <ContractComments
-        contractId={contract.name}
-        principal={contract.principal}
-        txId={contract.tx_id || ""}
-        currentUserDid={currentUserDid}
-      />
+      <div id="contract-comments-section">
+        <ContractComments
+          ref={contractCommentsRef}
+          contractId={contract.name}
+          principal={contract.principal}
+          txId={contract.tx_id || ""}
+          currentUserDid={currentUserDid}
+        />
+      </div>
     </div>
   );
-}
+});
