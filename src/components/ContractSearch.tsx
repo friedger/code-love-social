@@ -10,13 +10,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 interface ContractSearchProps {
   contracts: Contract[];
   isLoading: boolean;
+  isFetching?: boolean;
   onSelect: (contract: Contract) => void;
   selectedId?: string;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
 
-export function ContractSearch({ contracts, isLoading, onSelect, selectedId, searchQuery, onSearchChange }: ContractSearchProps) {
+export function ContractSearch({ contracts, isLoading, isFetching, onSelect, selectedId, searchQuery, onSearchChange }: ContractSearchProps) {
 
   if (isLoading) {
     return (
@@ -35,8 +36,11 @@ export function ContractSearch({ contracts, isLoading, onSelect, selectedId, sea
           placeholder="Search contracts..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
+          className="pl-10 pr-10"
         />
+        {isFetching && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
       </div>
 
       <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
