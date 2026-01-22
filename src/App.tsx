@@ -19,10 +19,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<StreamPage />} />
+          <Route path="/contracts" element={<Index />} />
           <Route path="/contract/:contractId" element={<ContractPage />} />
           <Route path="/profile/:did" element={<ProfilePage />} />
-          <Route path="/stream" element={<StreamPage />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
