@@ -6,6 +6,8 @@ import {
   unlikeComment,
   deleteComment,
   CreateCommentParams,
+  CommentsWithProfiles,
+  ProfileData,
 } from "@/lib/comments-api";
 import type { ContractRef, Comment } from "@/lexicon/types";
 
@@ -22,6 +24,7 @@ export const commentKeys = {
 
 /**
  * Hook to fetch comments for a contract
+ * Returns both comments and profiles
  */
 export function useComments(contractRef: ContractRef, options?: { lineNumber?: number }) {
   return useQuery({
@@ -30,6 +33,7 @@ export function useComments(contractRef: ContractRef, options?: { lineNumber?: n
       : commentKeys.contract(contractRef.principal, contractRef.contractName),
     queryFn: () =>
       getComments(contractRef.principal, contractRef.contractName, options),
+    select: (data: CommentsWithProfiles) => data,
   });
 }
 
@@ -39,6 +43,9 @@ export function useComments(contractRef: ContractRef, options?: { lineNumber?: n
 export function useLineComments(contractRef: ContractRef, lineNumber: number) {
   return useComments(contractRef, { lineNumber });
 }
+
+// Re-export ProfileData for component usage
+export type { ProfileData };
 
 /**
  * Hook to create a new comment

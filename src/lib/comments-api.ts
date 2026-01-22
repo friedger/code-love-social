@@ -23,8 +23,21 @@ export interface CreateCommentResponse {
   createdAt: string;
 }
 
+export interface ProfileData {
+  did: string;
+  handle: string;
+  displayName?: string;
+  avatar?: string;
+}
+
 export interface CommentsResponse {
   comments: CommentIndexRow[];
+  profiles: Record<string, ProfileData>;
+}
+
+export interface CommentsWithProfiles {
+  comments: Comment[];
+  profiles: Record<string, ProfileData>;
 }
 
 export interface CommentIndexRow {
@@ -110,7 +123,7 @@ export async function getComments(
   principal: string,
   contractName: string,
   options?: { lineNumber?: number }
-): Promise<Comment[]> {
+): Promise<CommentsWithProfiles> {
   const params = new URLSearchParams({
     principal,
     contractName,
@@ -136,7 +149,10 @@ export async function getComments(
   
   // TODO: Aggregate like counts from likes_index
   // For now, return with 0 likes
-  return data.comments.map((row) => indexRowToComment(row));
+  return {
+    comments: data.comments.map((row) => indexRowToComment(row)),
+    profiles: data.profiles || {},
+  };
 }
 
 /**
