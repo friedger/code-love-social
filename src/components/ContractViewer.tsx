@@ -8,6 +8,8 @@ import { MessageCircle } from "lucide-react";
 import { CommentThread } from "./CommentThread";
 import { ContractComments, type ContractCommentsRef } from "./ContractComments";
 import { HighlightedCodeLine } from "./HighlightedCodeLine";
+import { ContractIdenticon } from "./ContractIdenticon";
+import { formatContractId, getContractPath } from "@/lib/utils";
 import type { Comment } from "@/lexicon/types";
 
 interface ContractViewerProps {
@@ -91,12 +93,20 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
     <div className="space-y-4">
       <div className="flex gap-4">
         <div className="flex-1 bg-card rounded-lg border overflow-hidden">
-          <div className="bg-muted px-4 py-2 border-b flex items-center justify-between">
-            <div>
-              <h2 className="font-mono font-semibold text-foreground">{contract.name}.clar</h2>
-              <p className="text-xs text-muted-foreground">{contract.principal}</p>
+          <div className="bg-muted px-4 py-3 border-b flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <ContractIdenticon 
+                value={getContractPath(contract.principal, contract.name)} 
+                size={32} 
+                className="shrink-0 rounded" 
+              />
+              <h2 className="font-mono text-sm text-foreground truncate">
+                {formatContractId(contract.principal, contract.name)}
+              </h2>
             </div>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{contract.category}</span>
+            {contract.category && (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded shrink-0">{contract.category}</span>
+            )}
           </div>
           <div className="overflow-x-auto">
             <pre className="text-sm">
