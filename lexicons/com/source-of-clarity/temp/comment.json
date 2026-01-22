@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "A comment on a Clarity smart contract. Can target the entire contract, a specific line, or a range of lines.",
+      "description": "A comment on a Clarity smart contract. Can target the entire contract, a specific line, or a range of lines. Authentication required.",
       "key": "tid",
       "record": {
         "type": "object",
@@ -32,21 +32,9 @@
             "description": "The comment content"
           },
           "reply": {
-            "type": "object",
-            "description": "Reply reference for threaded conversations",
-            "required": ["root", "parent"],
-            "properties": {
-              "root": {
-                "type": "ref",
-                "ref": "com.atproto.repo.strongRef",
-                "description": "Reference to the root comment of the thread"
-              },
-              "parent": {
-                "type": "ref",
-                "ref": "com.atproto.repo.strongRef",
-                "description": "Reference to the immediate parent comment"
-              }
-            }
+            "type": "ref",
+            "ref": "com.source-of-clarity.temp.defs#replyRef",
+            "description": "Reply reference for threaded conversations"
           },
           "createdAt": {
             "type": "string",

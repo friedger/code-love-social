@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   isValidCommentRecord,
-  isValidLikeRecord,
+  isValidReactionRecord,
   isValidContractRef,
   isValidLineRange,
   isValidStrongRef,
   validateLineTargeting,
   getCommentType,
 } from './validation';
-import type { CommentRecord, LikeRecord } from './types';
+import type { CommentRecord, ReactionRecord } from './types';
 
 const TEST_TX_ID = '0xtest123abc456def789';
 
@@ -123,22 +123,23 @@ describe('AT Protocol Lexicon Types', () => {
     });
   });
 
-  describe('Like record', () => {
-    const likeRecord: LikeRecord = {
-      $type: 'com.source-of-clarity.temp.like',
+  describe('Reaction record', () => {
+    const reactionRecord: ReactionRecord = {
+      $type: 'com.source-of-clarity.temp.reaction',
       subject: {
         uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/3kf5',
         cid: 'bafyreiabc123',
       },
+      emoji: '👍',
       createdAt: '2026-01-21T16:30:00.000Z',
     };
 
-    it('should validate as a valid LikeRecord', () => {
-      expect(isValidLikeRecord(likeRecord)).toBe(true);
+    it('should validate as a valid ReactionRecord', () => {
+      expect(isValidReactionRecord(reactionRecord)).toBe(true);
     });
 
     it('should have valid subject reference', () => {
-      expect(isValidStrongRef(likeRecord.subject)).toBe(true);
+      expect(isValidStrongRef(reactionRecord.subject)).toBe(true);
     });
   });
 
@@ -212,17 +213,18 @@ describe('AT Protocol Lexicon Types', () => {
       expect(isValidCommentRecord(invalidTimestamp)).toBe(false);
     });
 
-    it('should reject like with wrong $type', () => {
+    it('should reject reaction with wrong $type', () => {
       const wrongType = {
         $type: 'com.source-of-clarity.temp.comment',
         subject: {
           uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/3kf5',
           cid: 'bafyreiabc123',
         },
+        emoji: '👍',
         createdAt: '2026-01-21T16:30:00.000Z',
       };
 
-      expect(isValidLikeRecord(wrongType)).toBe(false);
+      expect(isValidReactionRecord(wrongType)).toBe(false);
     });
   });
 });

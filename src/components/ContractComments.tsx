@@ -145,7 +145,8 @@ interface CommentCardProps {
 function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, depth }: CommentCardProps) {
   const profile = profiles[comment.authorDid];
   const replies = getRepliesFromComments(allComments, extractRkeyFromUri(comment.uri) || "");
-  const isLiked = currentUserDid && comment.likedBy.includes(currentUserDid);
+  const userReaction = comment.userReaction;
+  const totalReactions = Object.values(comment.reactions || {}).reduce((a, b) => a + b, 0);
 
   const likeCommentMutation = useLikeComment();
 
@@ -190,12 +191,12 @@ function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, 
         <p className="text-sm text-foreground">{comment.text}</p>
         <div className="flex items-center gap-4 text-muted-foreground">
           <button
-            className={`flex items-center gap-1 text-xs hover:text-primary ${isLiked ? "text-primary" : ""}`}
+            className={`flex items-center gap-1 text-xs hover:text-primary ${userReaction ? "text-primary" : ""}`}
             onClick={handleLike}
             disabled={!currentUserDid || likeCommentMutation.isPending}
           >
-            <Heart className={`h-3 w-3 ${isLiked ? "fill-current" : ""}`} />
-            {comment.likes}
+            <Heart className={`h-3 w-3 ${userReaction ? "fill-current" : ""}`} />
+            {totalReactions}
           </button>
           <button className="flex items-center gap-1 text-xs hover:text-primary" onClick={handleReply}>
             <MessageCircle className="h-3 w-3" />
