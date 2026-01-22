@@ -191,6 +191,16 @@ async function getAuthServerMetadata(authServerUrl: string): Promise<{
   return response.json();
 }
 
+// Granular OAuth scopes for Source of Clarity lexicons only
+// This restricts permissions to only our custom lexicon actions
+const OAUTH_SCOPES = [
+  "atproto",
+  // Comments: create and delete
+  "repo:*?collection=com.source-of-clarity.temp.comment&action=create,delete",
+  // Reactions: create and delete
+  "repo:*?collection=com.source-of-clarity.temp.reaction&action=create,delete",
+].join(" ");
+
 // Get the client metadata (this function's URL serves as client_id)
 function getClientMetadata(functionUrl: string): Record<string, unknown> {
   return {
@@ -198,7 +208,7 @@ function getClientMetadata(functionUrl: string): Record<string, unknown> {
     client_name: "Clarity Social",
     client_uri: functionUrl,
     redirect_uris: [`${functionUrl}/callback`],
-    scope: "atproto transition:generic",
+    scope: OAUTH_SCOPES,
     grant_types: ["authorization_code", "refresh_token"],
     response_types: ["code"],
     token_endpoint_auth_method: "none",
@@ -273,13 +283,13 @@ serve(async (req) => {
         throw new Error("Failed to initialize login");
       }
 
-      // Build authorization URL
+      // Build authorization URL with granular scopes
       const authParams = new URLSearchParams({
         response_type: "code",
         client_id: functionUrl,
         redirect_uri: `${functionUrl}/callback`,
         state,
-        scope: "atproto transition:generic",
+        scope: OAUTH_SCOPES,
         code_challenge: challenge,
         code_challenge_method: "S256",
         login_hint: handle,
