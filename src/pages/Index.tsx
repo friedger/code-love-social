@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Contract } from "@/types/contract";
 import { useContracts } from "@/hooks/useContracts";
 import { ContractSearch } from "@/components/ContractSearch";
 import { ContractViewer } from "@/components/ContractViewer";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Home } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
@@ -52,12 +54,20 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
             </div>
           </div>
-          <AuthButton
-            user={user}
-            isLoading={authLoading}
-            onLogin={login}
-            onLogout={logout}
-          />
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/" className="gap-1.5">
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
+            </Button>
+            <AuthButton
+              user={user}
+              isLoading={authLoading}
+              onLogin={login}
+              onLogout={logout}
+            />
+          </div>
         </div>
       </header>
 
