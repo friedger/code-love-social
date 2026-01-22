@@ -25,6 +25,13 @@ export function formatContractId(principal: string, contractName: string): strin
 }
 
 /**
+ * Format a contract identifier with a shorter address ellipse for tight spaces
+ */
+export function formatContractIdShort(principal: string, contractName: string): string {
+  return `${ellipseAddress(principal, 4, 4)}.${contractName}`;
+}
+
+/**
  * Build a full contract path (unellipsed, for URLs/logic)
  */
 export function getContractPath(principal: string, contractName: string): string {

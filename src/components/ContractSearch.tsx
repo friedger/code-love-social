@@ -1,13 +1,12 @@
 import { Contract } from "@/types/contract";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { getContractPath, formatContractId } from "@/lib/utils";
-import { ContractIdenticon } from "./ContractIdenticon";
+import { getContractPath } from "@/lib/utils";
+import { ContractListItem } from "./ContractListItem";
 
 interface ContractSearchProps {
   contracts: Contract[];
@@ -61,28 +60,16 @@ export function ContractSearch({ contracts, isLoading, isFetching, onSelect, sel
                 }`}
                 onClick={() => onSelect(contract)}
               >
-                <div className="flex items-start gap-3">
-                  <ContractIdenticon 
-                    value={getContractPath(contract.principal, contract.name)} 
-                    size={24} 
-                    className="shrink-0 rounded-sm" 
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm text-foreground truncate">
-                        {formatContractId(contract.principal, contract.name)}
-                      </span>
-                      {contract.category && (
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {contract.category}
-                        </Badge>
-                      )}
-                    </div>
-                    {contract.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                        {contract.description}
-                      </p>
-                    )}
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <ContractListItem
+                      principal={contract.principal}
+                      contractName={contract.name}
+                      category={contract.category || undefined}
+                      description={contract.description || undefined}
+                      showDescription
+                      size="sm"
+                    />
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
