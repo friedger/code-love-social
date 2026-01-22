@@ -32,6 +32,7 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
   const { data } = useComments({
     principal: contract.principal,
     contractName: contract.name,
+    txId: contract.tx_id || "",
   });
 
   const allComments = data?.comments || [];
@@ -126,6 +127,7 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
             <CommentThread
               contractId={contract.name}
               principal={contract.principal}
+              txId={contract.tx_id || ""}
               lineNumber={selectedLine}
               currentUserDid={currentUserDid}
               onClose={() => setSelectedLine(null)}
@@ -138,6 +140,7 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
       <ContractComments
         contractId={contract.name}
         principal={contract.principal}
+        txId={contract.tx_id || ""}
         currentUserDid={currentUserDid}
       />
     </div>

@@ -114,6 +114,7 @@ export type Database = {
           parent_uri: string | null
           principal: string
           text: string
+          tx_id: string | null
           uri: string
         }
         Insert: {
@@ -128,6 +129,7 @@ export type Database = {
           parent_uri?: string | null
           principal: string
           text: string
+          tx_id?: string | null
           uri: string
         }
         Update: {
@@ -142,6 +144,7 @@ export type Database = {
           parent_uri?: string | null
           principal?: string
           text?: string
+          tx_id?: string | null
           uri?: string
         }
         Relationships: []

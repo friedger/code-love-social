@@ -4,6 +4,18 @@ import type { Comment, ContractRef, StrongRef } from '@/lexicon/types';
 // Re-export Comment type for backward compatibility
 export type { Comment } from '@/lexicon/types';
 
+// Dummy txIds for test data
+const DUMMY_TX_IDS = {
+  'alex-vault': '0xabc123def456789alex',
+  'wrapped-stx': '0xabc123def456789wstx',
+  'stx-bridge': '0xabc123def456789bridge',
+  'mega-nft': '0xabc123def456789nft',
+  'clarity-dao': '0xabc123def456789dao',
+  'micro-stx': '0xabc123def456789micro',
+  'stx-lottery': '0xabc123def456789lottery',
+  'defi-aggregator': '0xabc123def456789defi',
+} as const;
+
 export const comments: Comment[] = [
   // Contract 1: alex-vault - Comments on various lines
   {
@@ -12,6 +24,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
       contractName: 'alex-vault',
+      txId: DUMMY_TX_IDS['alex-vault'],
     },
     lineNumber: 3,
     authorDid: users[0].did,
@@ -27,6 +40,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
       contractName: 'alex-vault',
+      txId: DUMMY_TX_IDS['alex-vault'],
     },
     lineNumber: 3,
     authorDid: users[1].did,
@@ -53,6 +67,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
       contractName: 'alex-vault',
+      txId: DUMMY_TX_IDS['alex-vault'],
     },
     lineNumber: 8,
     authorDid: users[2].did,
@@ -70,6 +85,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE',
       contractName: 'wrapped-stx',
+      txId: DUMMY_TX_IDS['wrapped-stx'],
     },
     lineNumber: 5,
     authorDid: users[3].did,
@@ -85,6 +101,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE',
       contractName: 'wrapped-stx',
+      txId: DUMMY_TX_IDS['wrapped-stx'],
     },
     lineNumber: 12,
     authorDid: users[4].did,
@@ -100,6 +117,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE',
       contractName: 'wrapped-stx',
+      txId: DUMMY_TX_IDS['wrapped-stx'],
     },
     lineNumber: 12,
     authorDid: users[5].did,
@@ -126,6 +144,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE',
       contractName: 'wrapped-stx',
+      txId: DUMMY_TX_IDS['wrapped-stx'],
     },
     lineNumber: 12,
     authorDid: users[4].did,
@@ -154,6 +173,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR',
       contractName: 'stx-bridge',
+      txId: DUMMY_TX_IDS['stx-bridge'],
     },
     lineNumber: 7,
     authorDid: users[0].did,
@@ -171,6 +191,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1',
       contractName: 'mega-nft',
+      txId: DUMMY_TX_IDS['mega-nft'],
     },
     lineNumber: 4,
     authorDid: users[3].did,
@@ -186,6 +207,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1',
       contractName: 'mega-nft',
+      txId: DUMMY_TX_IDS['mega-nft'],
     },
     lineNumber: 15,
     authorDid: users[2].did,
@@ -203,6 +225,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335',
       contractName: 'clarity-dao',
+      txId: DUMMY_TX_IDS['clarity-dao'],
     },
     lineNumber: 10,
     authorDid: users[1].did,
@@ -218,6 +241,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335',
       contractName: 'clarity-dao',
+      txId: DUMMY_TX_IDS['clarity-dao'],
     },
     lineNumber: 10,
     authorDid: users[0].did,
@@ -246,6 +270,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP2507VNQZC9VBXM7X7KB4SF4QJDJRSWHG4V39WPY',
       contractName: 'micro-stx',
+      txId: DUMMY_TX_IDS['micro-stx'],
     },
     lineNumber: 6,
     authorDid: users[5].did,
@@ -263,6 +288,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
       contractName: 'stx-lottery',
+      txId: DUMMY_TX_IDS['stx-lottery'],
     },
     lineNumber: 8,
     authorDid: users[4].did,
@@ -280,6 +306,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ',
       contractName: 'defi-aggregator',
+      txId: DUMMY_TX_IDS['defi-aggregator'],
     },
     lineRange: { start: 5, end: 12 },
     authorDid: users[0].did,
@@ -295,6 +322,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ',
       contractName: 'defi-aggregator',
+      txId: DUMMY_TX_IDS['defi-aggregator'],
     },
     lineRange: { start: 5, end: 12 },
     authorDid: users[1].did,
@@ -321,6 +349,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ',
       contractName: 'defi-aggregator',
+      txId: DUMMY_TX_IDS['defi-aggregator'],
     },
     lineNumber: 20,
     authorDid: users[2].did,
@@ -338,6 +367,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
       contractName: 'alex-vault',
+      txId: DUMMY_TX_IDS['alex-vault'],
     },
     authorDid: users[0].did,
     text: 'This is a well-architected AMM contract. The constant product formula is correctly implemented and the security checks are comprehensive.',
@@ -352,6 +382,7 @@ export const comments: Comment[] = [
     subject: {
       principal: 'SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335',
       contractName: 'clarity-dao',
+      txId: DUMMY_TX_IDS['clarity-dao'],
     },
     authorDid: users[1].did,
     text: 'Great governance contract! Would love to see time-locked proposals added.',

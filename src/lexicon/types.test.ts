@@ -10,6 +10,8 @@ import {
 } from './validation';
 import type { CommentRecord, LikeRecord } from './types';
 
+const TEST_TX_ID = '0xtest123abc456def789';
+
 describe('AT Protocol Lexicon Types', () => {
   describe('Contract-level comment', () => {
     const contractLevelComment: CommentRecord = {
@@ -17,6 +19,7 @@ describe('AT Protocol Lexicon Types', () => {
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
+        txId: TEST_TX_ID,
       },
       text: 'This is a well-architected AMM contract. The constant product formula implementation is clean and gas-efficient.',
       createdAt: '2026-01-21T15:30:00.000Z',
@@ -41,6 +44,7 @@ describe('AT Protocol Lexicon Types', () => {
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
+        txId: TEST_TX_ID,
       },
       lineNumber: 35,
       text: 'The asserts! check here is critical for security.',
@@ -66,6 +70,7 @@ describe('AT Protocol Lexicon Types', () => {
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
+        txId: TEST_TX_ID,
       },
       lineRange: { start: 39, end: 45 },
       text: 'This constant product formula (x * y = k) is the foundation of AMM design.',
@@ -91,6 +96,7 @@ describe('AT Protocol Lexicon Types', () => {
       subject: {
         principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
         contractName: 'alex-vault',
+        txId: TEST_TX_ID,
       },
       lineNumber: 35,
       text: 'Agreed! This prevents unauthorized token transfers.',
@@ -143,6 +149,7 @@ describe('AT Protocol Lexicon Types', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         lineNumber: 35,
         lineRange: { start: 39, end: 45 },
@@ -181,6 +188,7 @@ describe('AT Protocol Lexicon Types', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         text: '',
         createdAt: '2026-01-21T15:30:00.000Z',
@@ -195,6 +203,7 @@ describe('AT Protocol Lexicon Types', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         text: 'Valid text',
         createdAt: 'not-a-timestamp',

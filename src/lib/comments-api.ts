@@ -47,6 +47,7 @@ export interface CommentIndexRow {
   author_did: string;
   principal: string;
   contract_name: string;
+  tx_id: string | null;
   line_number: number | null;
   line_range_start: number | null;
   line_range_end: number | null;
@@ -85,6 +86,7 @@ export function indexRowToComment(row: CommentIndexRow, likeCount = 0, likedBy: 
     subject: {
       principal: row.principal,
       contractName: row.contract_name,
+      txId: row.tx_id || "", // Default to empty for legacy comments
     },
     authorDid: row.author_did,
     text: row.text,
@@ -122,7 +124,7 @@ export function indexRowToComment(row: CommentIndexRow, likeCount = 0, likedBy: 
 export async function getComments(
   principal: string,
   contractName: string,
-  options?: { lineNumber?: number }
+  options?: { lineNumber?: number; txId?: string }
 ): Promise<CommentsWithProfiles> {
   const params = new URLSearchParams({
     principal,
@@ -131,6 +133,10 @@ export async function getComments(
 
   if (options?.lineNumber !== undefined) {
     params.set("lineNumber", options.lineNumber.toString());
+  }
+
+  if (options?.txId !== undefined) {
+    params.set("txId", options.txId);
   }
 
   const response = await fetch(`${COMMENTS_URL}?${params.toString()}`, {
@@ -165,6 +171,7 @@ export async function createComment(params: CreateCommentParams): Promise<Create
     body: JSON.stringify({
       principal: params.subject.principal,
       contractName: params.subject.contractName,
+      txId: params.subject.txId,
       text: params.text,
       lineNumber: params.lineNumber,
       lineRange: params.lineRange,
