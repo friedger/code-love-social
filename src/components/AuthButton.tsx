@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -70,8 +71,10 @@ export function AuthButton({ user, isLoading, onLogin, onLogout }: AuthButtonPro
             <p className="text-xs text-muted-foreground">@{user.handle}</p>
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <UserIcon className="h-4 w-4 mr-2" /> Profile
+          <DropdownMenuItem asChild>
+            <Link to={`/profile/${user.handle}`}>
+              <UserIcon className="h-4 w-4 mr-2" /> Profile
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onLogout}>
