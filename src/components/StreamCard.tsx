@@ -2,9 +2,10 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, MessageSquare } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ExternalLink, MessageSquare, SmilePlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { Comment } from "@/lexicon/types";
+import type { Comment, KNOWN_REACTIONS } from "@/lexicon/types";
 import type { ProfileData } from "@/lib/comments-api";
 import { ContractIdenticon } from "./ContractIdenticon";
 
@@ -13,10 +14,8 @@ interface StreamCardProps {
   profile?: ProfileData;
 }
 
-/**
- * Ellipse a Stacks address for display
- * SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9 -> SP3K8B...A0KBR9
- */
+const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as const;
+
 function ellipseAddress(address: string, prefixChars = 6, suffixChars = 6): string {
   if (address.length <= prefixChars + suffixChars + 3) return address;
   return `${address.slice(0, prefixChars)}...${address.slice(-suffixChars)}`;
@@ -26,8 +25,8 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
   const contractPath = `${comment.subject.principal}.${comment.subject.contractName}`;
   const txId = comment.subject.txId;
   const isReply = !!comment.parentId;
+  const reactions = comment.reactions || {};
 
-  // Build deep link with line info
   const getContractLink = () => {
     let url = `/contract/${contractPath}`;
     if (comment.lineNumber) {
@@ -43,21 +42,15 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
       <CardContent className="p-4">
         {/* Header: Contract info on left, Author on right */}
         <div className="flex items-start justify-between gap-4 mb-3">
-          {/* Left: Contract identity with identicon and line pill */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <ContractIdenticon
-                value={contractPath}
-                size={20}
-                className="shrink-0 rounded-sm"
-              />
+              <ContractIdenticon value={contractPath} size={20} className="shrink-0 rounded-sm" />
               <Link
                 to={getContractLink()}
                 className="font-mono text-sm text-muted-foreground hover:text-foreground transition-colors truncate"
               >
                 {ellipseAddress(comment.subject.principal)}.{comment.subject.contractName}
               </Link>
-              {/* Line indicator - moved to header */}
               {comment.lineNumber && (
                 <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
                   L{comment.lineNumber}
@@ -82,7 +75,6 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
             )}
           </div>
 
-          {/* Right: Author info */}
           <div className="flex items-center gap-2 shrink-0">
             <div className="text-right">
               <Link
@@ -106,7 +98,7 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
           </div>
         </div>
 
-        {/* Main content: Comment text */}
+        {/* Main content */}
         <div className="space-y-2">
           {isReply && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -117,14 +109,44 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
           <p className="text-foreground leading-relaxed">{comment.text}</p>
         </div>
 
-        {/* Footer: Reply action */}
+        {/* Footer: Reactions and Reply */}
         <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-muted-foreground hover:text-foreground"
-            asChild
-          >
+          {/* Reaction counts */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {Object.entries(reactions).map(([emoji, count]) => (
+              <span
+                key={emoji}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs bg-muted/50"
+              >
+                <span>{emoji}</span>
+                <span className="text-muted-foreground">{count}</span>
+              </span>
+            ))}
+          </div>
+
+          {/* Add reaction button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+                <SmilePlus className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2" align="start">
+              <div className="flex gap-1">
+                {REACTION_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="p-1.5 hover:bg-muted rounded text-lg"
+                    onClick={() => {/* TODO: Call addReaction */}}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" asChild>
             <Link to={getContractLink()}>
               <MessageSquare className="h-3 w-3 mr-1" />
               Reply

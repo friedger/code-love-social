@@ -54,14 +54,20 @@ export interface CommentRecord {
   createdAt: string;
 }
 
+// Known emoji reactions
+export const KNOWN_REACTIONS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as const;
+export type KnownReaction = typeof KNOWN_REACTIONS[number];
+
 /**
- * com.source-of-clarity.temp.like record
- * A like on a comment
+ * com.source-of-clarity.temp.reaction record
+ * An emoji reaction on a comment
  */
-export interface LikeRecord {
-  $type: 'com.source-of-clarity.temp.like';
-  /** Reference to the liked comment */
+export interface ReactionRecord {
+  $type: 'com.source-of-clarity.temp.reaction';
+  /** Reference to the comment being reacted to */
   subject: StrongRef;
+  /** Emoji character for the reaction */
+  emoji: string;
   /** ISO 8601 creation timestamp */
   createdAt: string;
 }
@@ -77,10 +83,10 @@ export interface Comment extends Omit<CommentRecord, '$type'> {
   cid: string;
   /** DID of the comment author */
   authorDid: string;
-  /** Local like count (aggregated) */
-  likes: number;
-  /** DIDs who liked this comment */
-  likedBy: string[];
+  /** Aggregated reaction counts by emoji */
+  reactions: Record<string, number>;
+  /** User's own reaction emoji and URI (if any) */
+  userReaction?: { emoji: string; uri: string };
   /** Count of replies */
   replyCount: number;
   /** Local parent ID for tree traversal (derived from reply.parent.uri) */
@@ -136,4 +142,7 @@ export interface AppUser extends UserProfile, LocalUserData {}
 
 // Collection NSIDs
 export const LEXICON_COMMENT = 'com.source-of-clarity.temp.comment' as const;
-export const LEXICON_LIKE = 'com.source-of-clarity.temp.like' as const;
+export const LEXICON_REACTION = 'com.source-of-clarity.temp.reaction' as const;
+
+/** @deprecated Use LEXICON_REACTION instead */
+export const LEXICON_LIKE = 'com.source-of-clarity.temp.reaction' as const;

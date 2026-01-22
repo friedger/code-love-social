@@ -62,6 +62,12 @@ export interface LikeResponse {
   rkey: string;
 }
 
+export interface ReactionResponse {
+  uri: string;
+  cid: string;
+  rkey: string;
+}
+
 /**
  * Get authorization headers for authenticated requests
  */
@@ -79,7 +85,12 @@ function getAuthHeaders(): HeadersInit {
 /**
  * Convert a CommentIndexRow to a Comment for UI consumption
  */
-export function indexRowToComment(row: CommentIndexRow, likeCount = 0, likedBy: string[] = [], replyCount = 0): Comment {
+export function indexRowToComment(
+  row: CommentIndexRow,
+  reactions: Record<string, number> = {},
+  userReaction?: { emoji: string; uri: string },
+  replyCount = 0
+): Comment {
   const comment: Comment = {
     uri: row.uri,
     cid: row.cid,
@@ -91,8 +102,8 @@ export function indexRowToComment(row: CommentIndexRow, likeCount = 0, likedBy: 
     authorDid: row.author_did,
     text: row.text,
     createdAt: row.created_at,
-    likes: likeCount,
-    likedBy,
+    reactions,
+    userReaction,
     replyCount,
   };
 
@@ -257,36 +268,46 @@ export async function createComment(params: CreateCommentParams): Promise<Create
 }
 
 /**
- * Like a comment
+ * Add a reaction to a comment
  */
-export async function likeComment(uri: string, cid: string): Promise<LikeResponse> {
-  const response = await fetch(`${COMMENTS_URL}/like`, {
+export async function addReaction(uri: string, cid: string, emoji: string): Promise<ReactionResponse> {
+  const response = await fetch(`${COMMENTS_URL}/reaction`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ uri, cid }),
+    body: JSON.stringify({ uri, cid, emoji }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to like comment");
+    throw new Error(error.error || "Failed to add reaction");
   }
 
   return response.json();
 }
 
 /**
- * Unlike a comment
+ * Remove a reaction from a comment
  */
-export async function unlikeComment(likeUri: string): Promise<void> {
-  const response = await fetch(`${COMMENTS_URL}/like?uri=${encodeURIComponent(likeUri)}`, {
+export async function removeReaction(reactionUri: string): Promise<void> {
+  const response = await fetch(`${COMMENTS_URL}/reaction?uri=${encodeURIComponent(reactionUri)}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to unlike comment");
+    throw new Error(error.error || "Failed to remove reaction");
   }
+}
+
+/** @deprecated Use addReaction instead */
+export async function likeComment(uri: string, cid: string): Promise<LikeResponse> {
+  return addReaction(uri, cid, "👍");
+}
+
+/** @deprecated Use removeReaction instead */
+export async function unlikeComment(likeUri: string): Promise<void> {
+  return removeReaction(likeUri);
 }
 
 /**

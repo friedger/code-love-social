@@ -3,11 +3,11 @@ import {
   toCommentRecord,
   fromCommentRecord,
   createCommentRecord,
-  createLikeRecord,
+  createReactionRecord,
   generateTID,
   extractParentIdFromUri,
 } from './conversion';
-import { isValidCommentRecord, isValidLikeRecord } from './validation';
+import { isValidCommentRecord, isValidReactionRecord } from './validation';
 import type { CommentRecord, Comment } from './types';
 
 const TEST_TX_ID = '0xtest123abc456def789';
@@ -26,8 +26,7 @@ describe('Conversion helpers', () => {
         authorDid: 'did:plc:user1',
         text: 'Great contract architecture!',
         createdAt: '2026-01-21T15:30:00.000Z',
-        likes: 5,
-        likedBy: ['did:plc:user2'],
+        reactions: { '👍': 5 },
         replyCount: 0,
       };
 
@@ -56,8 +55,7 @@ describe('Conversion helpers', () => {
         authorDid: 'did:plc:user1',
         text: 'This line needs attention.',
         createdAt: '2026-01-21T15:30:00.000Z',
-        likes: 2,
-        likedBy: [],
+        reactions: { '👍': 2 },
         replyCount: 1,
       };
 
@@ -81,8 +79,7 @@ describe('Conversion helpers', () => {
         authorDid: 'did:plc:user1',
         text: 'This section handles swaps.',
         createdAt: '2026-01-21T15:30:00.000Z',
-        likes: 0,
-        likedBy: [],
+        reactions: {},
         replyCount: 0,
       };
 
@@ -106,8 +103,7 @@ describe('Conversion helpers', () => {
         authorDid: 'did:plc:user2',
         text: 'I agree with this observation.',
         createdAt: '2026-01-21T16:00:00.000Z',
-        likes: 1,
-        likedBy: ['did:plc:user1'],
+        reactions: { '👍': 1 },
         parentId: 'def456',
         reply: {
           root: {
@@ -149,8 +145,7 @@ describe('Conversion helpers', () => {
         authorDid: 'did:plc:author1',
         uri: 'at://did:plc:author1/com.source-of-clarity.temp.comment/abc',
         cid: 'bafyrei123',
-        likes: 10,
-        likedBy: ['did:plc:user1', 'did:plc:user2'],
+        reactions: { '👍': 10, '🔥': 2 },
         replyCount: 3,
       });
 
@@ -159,8 +154,7 @@ describe('Conversion helpers', () => {
       expect(comment.text).toBe('The asserts! check here is critical for security.');
       expect(comment.lineNumber).toBe(35);
       expect(comment.subject).toEqual(record.subject);
-      expect(comment.likes).toBe(10);
-      expect(comment.likedBy).toHaveLength(2);
+      expect(comment.reactions).toEqual({ '👍': 10, '🔥': 2 });
       expect(comment.replyCount).toBe(3);
     });
 
@@ -216,8 +210,7 @@ describe('Conversion helpers', () => {
         cid: 'cid',
       });
 
-      expect(comment.likes).toBe(0);
-      expect(comment.likedBy).toEqual([]);
+      expect(comment.reactions).toEqual({});
       expect(comment.replyCount).toBe(0);
       expect(comment.lineNumber).toBeUndefined();
       expect(comment.lineRange).toBeUndefined();
@@ -282,18 +275,32 @@ describe('Conversion helpers', () => {
     });
   });
 
-  describe('createLikeRecord', () => {
-    it('should create a valid like record', () => {
-      const record = createLikeRecord({
-        uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/xyz',
-        cid: 'bafyreiabc123xyz',
-      });
+  describe('createReactionRecord', () => {
+    it('should create a valid reaction record', () => {
+      const record = createReactionRecord(
+        {
+          uri: 'at://did:plc:abc123/com.source-of-clarity.temp.comment/xyz',
+          cid: 'bafyreiabc123xyz',
+        },
+        '👍'
+      );
 
-      expect(record.$type).toBe('com.source-of-clarity.temp.like');
+      expect(record.$type).toBe('com.source-of-clarity.temp.reaction');
       expect(record.subject.uri).toBe('at://did:plc:abc123/com.source-of-clarity.temp.comment/xyz');
       expect(record.subject.cid).toBe('bafyreiabc123xyz');
+      expect(record.emoji).toBe('👍');
       expect(record.createdAt).toBeDefined();
-      expect(isValidLikeRecord(record)).toBe(true);
+      expect(isValidReactionRecord(record)).toBe(true);
+    });
+
+    it('should accept different emoji values', () => {
+      const record = createReactionRecord(
+        { uri: 'at://did:plc:test/com.source-of-clarity.temp.comment/xyz', cid: 'cid' },
+        '🔥'
+      );
+
+      expect(record.emoji).toBe('🔥');
+      expect(isValidReactionRecord(record)).toBe(true);
     });
   });
 

@@ -5,20 +5,20 @@
     "contractRef": {
       "type": "object",
       "description": "Reference to a Clarity smart contract on the Stacks blockchain",
-      "required": ["principal", "contractName", "txId"],
+      "required": ["principal", "contractName"],
       "properties": {
         "principal": {
           "type": "string",
-          "description": "The Stacks address that deployed the contract (e.g., SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9)"
+          "description": "The Stacks address that deployed the contract"
         },
         "contractName": {
           "type": "string",
-          "description": "The name of the contract (e.g., alex-vault)",
+          "description": "The name of the contract",
           "maxLength": 128
         },
         "txId": {
           "type": "string",
-          "description": "Transaction ID of the contract deployment, ensuring comments are bound to a specific deployment"
+          "description": "Transaction ID of the contract deployment (optional for comments on undeployed contracts)"
         }
       }
     },
@@ -30,12 +30,29 @@
         "start": {
           "type": "integer",
           "minimum": 1,
-          "description": "Starting line number (inclusive)"
+          "description": "Starting line number (inclusive, 1-based)"
         },
         "end": {
           "type": "integer",
           "minimum": 1,
-          "description": "Ending line number (inclusive)"
+          "description": "Ending line number (inclusive, 1-based)"
+        }
+      }
+    },
+    "replyRef": {
+      "type": "object",
+      "description": "Reference for threaded comment replies",
+      "required": ["root", "parent"],
+      "properties": {
+        "root": {
+          "type": "ref",
+          "ref": "com.atproto.repo.strongRef",
+          "description": "Reference to the root comment of the thread"
+        },
+        "parent": {
+          "type": "ref",
+          "ref": "com.atproto.repo.strongRef",
+          "description": "Reference to the immediate parent comment"
         }
       }
     }

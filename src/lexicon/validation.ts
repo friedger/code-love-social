@@ -1,5 +1,5 @@
-import type { ContractRef, LineRange, StrongRef, CommentRecord, LikeRecord, ReplyRef } from './types';
-import { LEXICON_COMMENT, LEXICON_LIKE } from './types';
+import type { ContractRef, LineRange, StrongRef, CommentRecord, ReactionRecord, ReplyRef } from './types';
+import { LEXICON_COMMENT, LEXICON_REACTION, KNOWN_REACTIONS } from './types';
 
 /**
  * Validates if an object is a valid ContractRef
@@ -92,14 +92,15 @@ export function isValidCommentRecord(record: unknown): record is CommentRecord {
 }
 
 /**
- * Validates if an object is a valid LikeRecord
+ * Validates if an object is a valid ReactionRecord
  */
-export function isValidLikeRecord(record: unknown): record is LikeRecord {
+export function isValidReactionRecord(record: unknown): record is ReactionRecord {
   if (typeof record !== 'object' || record === null) return false;
   const obj = record as Record<string, unknown>;
   
-  if (obj.$type !== LEXICON_LIKE) return false;
+  if (obj.$type !== LEXICON_REACTION) return false;
   if (!isValidStrongRef(obj.subject)) return false;
+  if (typeof obj.emoji !== 'string' || obj.emoji.length === 0 || obj.emoji.length > 10) return false;
   if (typeof obj.createdAt !== 'string') return false;
   
   // Validate ISO 8601 timestamp
@@ -107,6 +108,13 @@ export function isValidLikeRecord(record: unknown): record is LikeRecord {
   if (isNaN(timestamp)) return false;
   
   return true;
+}
+
+/**
+ * Validates that an emoji is a known reaction value
+ */
+export function isKnownReaction(emoji: string): boolean {
+  return (KNOWN_REACTIONS as readonly string[]).includes(emoji);
 }
 
 /**

@@ -19,7 +19,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // AT Protocol collection names
 const COMMENT_COLLECTION = "com.source-of-clarity.temp.comment";
-const LIKE_COLLECTION = "com.source-of-clarity.temp.like";
+const REACTION_COLLECTION = "com.source-of-clarity.temp.reaction";
 
 // Create Supabase client with service role for database access
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -357,9 +357,9 @@ serve(async (req) => {
       );
     }
 
-    // ============== POST /comments/like ==============
-    // Like a comment
-    if (req.method === "POST" && pathParts.length === 2 && pathParts[1] === "like") {
+    // ============== POST /comments/reaction ==============
+    // Add a reaction to a comment
+    if (req.method === "POST" && pathParts.length === 2 && pathParts[1] === "reaction") {
       const authHeader = req.headers.get("Authorization");
       const sessionToken = authHeader?.replace("Bearer ", "");
 
@@ -373,9 +373,9 @@ serve(async (req) => {
       const { session } = await getValidSession(sessionToken);
       const body = await req.json();
 
-      if (!body.uri || !body.cid) {
+      if (!body.uri || !body.cid || !body.emoji) {
         return new Response(
-          JSON.stringify({ error: "Missing uri or cid" }),
+          JSON.stringify({ error: "Missing uri, cid, or emoji" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -388,13 +388,14 @@ serve(async (req) => {
         dpop_private_key_jwk: session.dpop_private_key_jwk,
       });
 
-      // Build the like record
-      const likeRecord = {
-        $type: LIKE_COLLECTION,
+      // Build the reaction record
+      const reactionRecord = {
+        $type: REACTION_COLLECTION,
         subject: {
           uri: body.uri,
           cid: body.cid,
         },
+        emoji: body.emoji,
         createdAt: new Date().toISOString(),
       };
 
@@ -404,22 +405,23 @@ serve(async (req) => {
       // Write to user's PDS
       const response = await agent.com.atproto.repo.putRecord({
         repo: session.did,
-        collection: LIKE_COLLECTION,
+        collection: REACTION_COLLECTION,
         rkey,
-        record: likeRecord,
+        record: reactionRecord,
       });
 
-      // Store in likes index
+      // Store in likes index with emoji
       const { error: likeIndexError } = await supabase.from("likes_index").insert({
         uri: response.data.uri,
         cid: response.data.cid,
         author_did: session.did,
         subject_uri: body.uri,
         subject_cid: body.cid,
+        emoji: body.emoji,
       });
 
       if (likeIndexError) {
-        console.error("Like index error:", likeIndexError);
+        console.error("Reaction index error:", likeIndexError);
       }
 
       return new Response(
@@ -432,9 +434,9 @@ serve(async (req) => {
       );
     }
 
-    // ============== DELETE /comments/like ==============
-    // Unlike a comment
-    if (req.method === "DELETE" && pathParts.length === 2 && pathParts[1] === "like") {
+    // ============== DELETE /comments/reaction ==============
+    // Remove a reaction
+    if (req.method === "DELETE" && pathParts.length === 2 && pathParts[1] === "reaction") {
       const authHeader = req.headers.get("Authorization");
       const sessionToken = authHeader?.replace("Bearer ", "");
 
@@ -446,20 +448,20 @@ serve(async (req) => {
       }
 
       const { session } = await getValidSession(sessionToken);
-      const likeUri = url.searchParams.get("uri");
+      const reactionUri = url.searchParams.get("uri");
 
-      if (!likeUri) {
+      if (!reactionUri) {
         return new Response(
-          JSON.stringify({ error: "Missing like uri" }),
+          JSON.stringify({ error: "Missing reaction uri" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       // Extract rkey from URI
-      const uriMatch = likeUri.match(/at:\/\/([^/]+)\/([^/]+)\/([^/]+)/);
+      const uriMatch = reactionUri.match(/at:\/\/([^/]+)\/([^/]+)\/([^/]+)/);
       if (!uriMatch) {
         return new Response(
-          JSON.stringify({ error: "Invalid like uri" }),
+          JSON.stringify({ error: "Invalid reaction uri" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -477,12 +479,12 @@ serve(async (req) => {
       // Delete from user's PDS
       await agent.com.atproto.repo.deleteRecord({
         repo: session.did,
-        collection: LIKE_COLLECTION,
+        collection: REACTION_COLLECTION,
         rkey,
       });
 
       // Remove from index
-      await supabase.from("likes_index").delete().eq("uri", likeUri);
+      await supabase.from("likes_index").delete().eq("uri", reactionUri);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

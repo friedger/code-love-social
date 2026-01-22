@@ -30,8 +30,7 @@ export const comments: Comment[] = [
     authorDid: users[0].did,
     text: 'Consider using a more descriptive constant name here for better readability.',
     createdAt: '2026-01-20T10:30:00Z',
-    likes: 5,
-    likedBy: [users[1].did, users[2].did],
+    reactions: { '👍': 3, '🔥': 2 },
     replyCount: 1,
   },
   {
@@ -46,8 +45,7 @@ export const comments: Comment[] = [
     authorDid: users[1].did,
     text: 'Agreed! Something like MAX_DEPOSIT_AMOUNT would be clearer.',
     createdAt: '2026-01-20T11:15:00Z',
-    likes: 3,
-    likedBy: [users[0].did],
+    reactions: { '👍': 3 },
     parentId: '3kf4abc123',
     reply: {
       root: {
@@ -73,8 +71,7 @@ export const comments: Comment[] = [
     authorDid: users[2].did,
     text: 'This error handling pattern is excellent for DeFi security.',
     createdAt: '2026-01-20T14:00:00Z',
-    likes: 8,
-    likedBy: [users[0].did, users[1].did, users[3].did],
+    reactions: { '👍': 5, '❤️': 3 },
     replyCount: 0,
   },
 
@@ -91,8 +88,7 @@ export const comments: Comment[] = [
     authorDid: users[3].did,
     text: 'Nice use of the SIP-010 trait here.',
     createdAt: '2026-01-19T09:00:00Z',
-    likes: 2,
-    likedBy: [users[4].did],
+    reactions: { '👍': 2 },
     replyCount: 0,
   },
   {
@@ -107,8 +103,7 @@ export const comments: Comment[] = [
     authorDid: users[4].did,
     text: 'The wrap function should validate minimum amounts.',
     createdAt: '2026-01-19T10:30:00Z',
-    likes: 4,
-    likedBy: [users[0].did, users[3].did],
+    reactions: { '⚠️': 4 },
     replyCount: 2,
   },
   {
@@ -123,8 +118,7 @@ export const comments: Comment[] = [
     authorDid: users[5].did,
     text: 'Good catch! What minimum would you suggest?',
     createdAt: '2026-01-19T11:00:00Z',
-    likes: 1,
-    likedBy: [],
+    reactions: { '👀': 1 },
     parentId: '3kf4mno345',
     reply: {
       root: {
@@ -150,8 +144,7 @@ export const comments: Comment[] = [
     authorDid: users[4].did,
     text: 'At least 1000 microSTX to prevent dust attacks.',
     createdAt: '2026-01-19T11:30:00Z',
-    likes: 6,
-    likedBy: [users[5].did, users[0].did],
+    reactions: { '👍': 4, '🔥': 2 },
     parentId: '3kf4pqr678',
     reply: {
       root: {
@@ -179,8 +172,7 @@ export const comments: Comment[] = [
     authorDid: users[0].did,
     text: 'This bridge implementation needs additional security audits before mainnet.',
     createdAt: '2026-01-18T16:00:00Z',
-    likes: 12,
-    likedBy: [users[1].did, users[2].did, users[3].did],
+    reactions: { '⚠️': 8, '👍': 4 },
     replyCount: 0,
   },
 
@@ -197,8 +189,7 @@ export const comments: Comment[] = [
     authorDid: users[3].did,
     text: 'Good implementation of SIP-009 standard.',
     createdAt: '2026-01-17T10:00:00Z',
-    likes: 3,
-    likedBy: [users[0].did],
+    reactions: { '👍': 3 },
     replyCount: 0,
   },
   {
@@ -213,8 +204,7 @@ export const comments: Comment[] = [
     authorDid: users[2].did,
     text: 'Consider adding royalty support for secondary sales.',
     createdAt: '2026-01-17T11:00:00Z',
-    likes: 7,
-    likedBy: [users[3].did, users[4].did],
+    reactions: { '🚀': 5, '👍': 2 },
     replyCount: 0,
   },
 
@@ -231,8 +221,7 @@ export const comments: Comment[] = [
     authorDid: users[1].did,
     text: 'The voting mechanism could benefit from quadratic voting.',
     createdAt: '2026-01-16T14:00:00Z',
-    likes: 9,
-    likedBy: [users[0].did, users[2].did, users[4].did],
+    reactions: { '👍': 6, '🔥': 3 },
     replyCount: 1,
   },
   {
@@ -247,8 +236,7 @@ export const comments: Comment[] = [
     authorDid: users[0].did,
     text: 'Quadratic voting would be great but adds complexity. Maybe in v2?',
     createdAt: '2026-01-16T15:00:00Z',
-    likes: 4,
-    likedBy: [users[1].did],
+    reactions: { '👍': 4 },
     parentId: '3kf5def123',
     reply: {
       root: {
@@ -276,8 +264,7 @@ export const comments: Comment[] = [
     authorDid: users[5].did,
     text: 'Payment channels would reduce transaction costs significantly.',
     createdAt: '2026-01-15T09:00:00Z',
-    likes: 5,
-    likedBy: [users[0].did, users[1].did],
+    reactions: { '🚀': 3, '👍': 2 },
     replyCount: 0,
   },
 
@@ -294,8 +281,7 @@ export const comments: Comment[] = [
     authorDid: users[4].did,
     text: 'VRF would make the randomness more secure.',
     createdAt: '2026-01-14T12:00:00Z',
-    likes: 6,
-    likedBy: [users[0].did, users[2].did],
+    reactions: { '⚠️': 4, '👍': 2 },
     replyCount: 0,
   },
 
@@ -312,8 +298,7 @@ export const comments: Comment[] = [
     authorDid: users[0].did,
     text: 'This routing logic is well-designed but could use more documentation on the algorithm.',
     createdAt: '2026-01-13T10:00:00Z',
-    likes: 11,
-    likedBy: [users[1].did, users[2].did, users[3].did, users[4].did],
+    reactions: { '👍': 8, '❤️': 3 },
     replyCount: 1,
   },
   {
@@ -328,8 +313,7 @@ export const comments: Comment[] = [
     authorDid: users[1].did,
     text: 'I can help with documentation! The routing uses a modified Bellman-Ford approach.',
     createdAt: '2026-01-13T11:00:00Z',
-    likes: 8,
-    likedBy: [users[0].did, users[2].did],
+    reactions: { '🔥': 5, '👍': 3 },
     parentId: '3kf5pqr345',
     reply: {
       root: {
@@ -355,8 +339,7 @@ export const comments: Comment[] = [
     authorDid: users[2].did,
     text: 'The slippage calculation here needs more precision.',
     createdAt: '2026-01-13T14:00:00Z',
-    likes: 4,
-    likedBy: [users[0].did],
+    reactions: { '👀': 4 },
     replyCount: 0,
   },
 
@@ -372,8 +355,7 @@ export const comments: Comment[] = [
     authorDid: users[0].did,
     text: 'This is a well-architected AMM contract. The constant product formula is correctly implemented and the security checks are comprehensive.',
     createdAt: '2026-01-21T15:30:00Z',
-    likes: 15,
-    likedBy: [users[1].did, users[2].did, users[3].did],
+    reactions: { '❤️': 10, '🔥': 5 },
     replyCount: 0,
   },
   {
@@ -387,8 +369,7 @@ export const comments: Comment[] = [
     authorDid: users[1].did,
     text: 'Great governance contract! Would love to see time-locked proposals added.',
     createdAt: '2026-01-16T10:00:00Z',
-    likes: 7,
-    likedBy: [users[0].did, users[2].did],
+    reactions: { '👍': 5, '🚀': 2 },
     replyCount: 0,
   },
 ];

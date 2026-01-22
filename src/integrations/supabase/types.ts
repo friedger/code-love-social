@@ -199,6 +199,7 @@ export type Database = {
           author_did: string
           cid: string
           created_at: string | null
+          emoji: string
           id: string
           subject_cid: string
           subject_uri: string
@@ -208,6 +209,7 @@ export type Database = {
           author_did: string
           cid: string
           created_at?: string | null
+          emoji?: string
           id?: string
           subject_cid: string
           subject_uri: string
@@ -217,6 +219,7 @@ export type Database = {
           author_did?: string
           cid?: string
           created_at?: string | null
+          emoji?: string
           id?: string
           subject_cid?: string
           subject_uri?: string

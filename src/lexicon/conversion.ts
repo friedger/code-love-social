@@ -1,5 +1,5 @@
-import type { CommentRecord, ContractRef, StrongRef, LikeRecord, Comment } from './types';
-import { LEXICON_COMMENT, LEXICON_LIKE } from './types';
+import type { CommentRecord, ContractRef, StrongRef, ReactionRecord, Comment } from './types';
+import { LEXICON_COMMENT, LEXICON_REACTION } from './types';
 
 /**
  * Options for converting a CommentRecord to a Comment
@@ -11,10 +11,10 @@ export interface FromRecordOptions {
   uri: string;
   /** The CID of the record */
   cid: string;
-  /** Initial like count */
-  likes?: number;
-  /** Initial likedBy array */
-  likedBy?: string[];
+  /** Aggregated reaction counts */
+  reactions?: Record<string, number>;
+  /** User's own reaction */
+  userReaction?: { emoji: string; uri: string };
   /** Reply count */
   replyCount?: number;
   /** Parent ID for threading (if reply) */
@@ -63,8 +63,8 @@ export function fromCommentRecord(
     authorDid: options.authorDid,
     text: record.text,
     createdAt: record.createdAt,
-    likes: options.likes ?? 0,
-    likedBy: options.likedBy ?? [],
+    reactions: options.reactions ?? {},
+    userReaction: options.userReaction,
     replyCount: options.replyCount ?? 0,
   };
 
@@ -121,12 +121,13 @@ export function createCommentRecord(
 }
 
 /**
- * Create a new LikeRecord with the current timestamp
+ * Create a new ReactionRecord with the current timestamp
  */
-export function createLikeRecord(subject: StrongRef): LikeRecord {
+export function createReactionRecord(subject: StrongRef, emoji: string): ReactionRecord {
   return {
-    $type: LEXICON_LIKE,
+    $type: LEXICON_REACTION,
     subject,
+    emoji,
     createdAt: new Date().toISOString(),
   };
 }
