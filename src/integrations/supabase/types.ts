@@ -146,6 +146,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          category: string | null
+          clarity_version: string | null
+          created_at: string | null
+          deployed_at: string | null
+          description: string | null
+          id: string
+          name: string
+          principal: string
+          source_code: string
+          source_hash: string | null
+          tx_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          clarity_version?: string | null
+          created_at?: string | null
+          deployed_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          principal: string
+          source_code: string
+          source_hash?: string | null
+          tx_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          clarity_version?: string | null
+          created_at?: string | null
+          deployed_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          principal?: string
+          source_code?: string
+          source_hash?: string | null
+          tx_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       likes_index: {
         Row: {
           author_did: string
