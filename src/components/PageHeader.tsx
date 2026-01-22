@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { FileCode } from "lucide-react";
+import { FileCode, Plus } from "lucide-react";
 
 interface PageHeaderProps {
   showBackToHome?: boolean;
@@ -31,6 +31,15 @@ export function PageHeader({ showBackToHome = true }: PageHeaderProps) {
             <FileCode className="h-4 w-4" />
             <span className="hidden sm:inline">Browse Contracts</span>
           </Link>
+          {user && (
+            <Link
+              to="/add-contract"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Contract</span>
+            </Link>
+          )}
           <AuthButton
             user={user}
             isLoading={isLoading}

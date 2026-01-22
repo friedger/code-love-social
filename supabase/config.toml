@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.atproto-auth]
 verify_jwt = false
+
+[functions.add-contract]
+verify_jwt = false
