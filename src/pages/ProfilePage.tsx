@@ -2,29 +2,30 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getCommentsByAuthor, ProfileData } from "@/lib/comments-api";
 import { identityService } from "@/lib/identity-service";
+import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, FileCode, ExternalLink, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png";
 import { formatDistanceToNow } from "date-fns";
 import { FollowingAvatars } from "@/components/FollowingAvatars";
+import { FollowButton } from "@/components/FollowButton";
+import { PageHeader } from "@/components/PageHeader";
 
 const ProfilePage = () => {
-  // The URL param can be either a DID or a handle
   const { did: identifier } = useParams<{ did: string }>();
+  const { user } = useAtprotoAuth();
 
   // Determine if we need to resolve the identifier
   const isHandle = identifier ? identityService.isHandle(identifier) : false;
-  const isDid = identifier ? identityService.isDid(identifier) : false;
 
   // Resolve handle to DID if needed
   const { data: resolvedDid, isLoading: isResolvingHandle } = useQuery({
     queryKey: ["resolve-handle", identifier],
     queryFn: () => identityService.resolveHandle(identifier!),
     enabled: !!identifier && isHandle,
-    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    staleTime: 10 * 60 * 1000,
   });
 
   // The actual DID to use for fetching comments
@@ -37,7 +38,7 @@ const ProfilePage = () => {
     enabled: !!did,
   });
 
-  // Fetch full profile from Bluesky (for accurate data)
+  // Fetch full profile from Bluesky
   const { data: bskyProfile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["bsky-profile", did],
     queryFn: () => identityService.getProfile(did!),
@@ -48,27 +49,13 @@ const ProfilePage = () => {
   const isLoading = isResolvingHandle || isLoadingComments || isLoadingProfile;
   const profile: ProfileData | undefined = did ? data?.profiles[did] : undefined;
   const comments = data?.comments || [];
-
-  // Use Bluesky profile data when available, fall back to local profile
   const displayProfile = bskyProfile || profile;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Source of Clarity" className="h-8 w-8" />
-            <div className="hidden sm:block">
-              <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
-              <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
-            </div>
-          </Link>
-        </div>
-      </header>
+      <PageHeader />
 
       <main className="container mx-auto px-4 py-6 max-w-3xl">
-        {/* Back button */}
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -89,32 +76,40 @@ const ProfilePage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-start gap-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={displayProfile?.avatar} alt={displayProfile?.displayName || displayProfile?.handle} />
+                    <AvatarImage
+                      src={displayProfile?.avatar}
+                      alt={displayProfile?.displayName || displayProfile?.handle}
+                    />
                     <AvatarFallback className="text-lg">
                       {(displayProfile?.displayName || displayProfile?.handle || "?")[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground">
-                      {displayProfile?.displayName || displayProfile?.handle || "Unknown User"}
-                    </h2>
-                    <p className="text-muted-foreground">
-                      @{displayProfile?.handle || did?.slice(0, 20)}
-                    </p>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground">
+                          {displayProfile?.displayName || displayProfile?.handle || "Unknown User"}
+                        </h2>
+                        <p className="text-muted-foreground">
+                          @{displayProfile?.handle || did?.slice(0, 20)}
+                        </p>
+                      </div>
+                      {did && <FollowButton targetDid={did} currentUserDid={user?.did} />}
+                    </div>
                     <a
                       href={`https://bsky.app/profile/${displayProfile?.handle || did}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-2"
                     >
                       View on Bluesky <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
                 </div>
 
-                {/* Following section */}
+                {/* Following section - prioritized by activity */}
                 {did && <FollowingAvatars actor={did} limit={30} />}
               </div>
             )}

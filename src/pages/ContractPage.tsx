@@ -1,15 +1,14 @@
 import { useParams, Link } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
 import { ContractViewer } from "@/components/ContractViewer";
-import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
 import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png";
+import { PageHeader } from "@/components/PageHeader";
 
 const ContractPage = () => {
   const { contractId } = useParams<{ contractId: string }>();
-  const { user, isLoading: authLoading, login, logout } = useAtprotoAuth();
+  const { user } = useAtprotoAuth();
 
   // Parse principal.name format
   const lastDotIndex = contractId?.lastIndexOf(".") ?? -1;
@@ -20,26 +19,7 @@ const ContractPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <img src={logo} alt="Source of Clarity" className="h-8 w-8" />
-              <div>
-                <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
-                <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
-              </div>
-            </Link>
-          </div>
-          <AuthButton
-            user={user}
-            isLoading={authLoading}
-            onLogin={login}
-            onLogout={logout}
-          />
-        </div>
-      </header>
+      <PageHeader />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
