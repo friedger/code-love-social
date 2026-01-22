@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileCode, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { ContractIdenticon } from "./ContractIdenticon";
 
 interface ContractMatchCardProps {
   principal: string;
@@ -24,18 +25,15 @@ export function ContractMatchCard({ principal, contractName, txId }: ContractMat
       <CardContent className="p-3">
         <Link
           to={`/contract/${contractPath}`}
-          className="flex items-start gap-2"
+          className="flex items-center gap-2"
         >
-          <div className="p-1.5 rounded bg-primary/10 shrink-0">
-            <FileCode className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-medium text-foreground truncate">
-              {contractName}
-            </div>
-            <div className="text-xs text-muted-foreground font-mono truncate">
-              {ellipseAddress(principal)}
-            </div>
+          <ContractIdenticon
+            value={contractPath}
+            size={24}
+            className="shrink-0 rounded-sm"
+          />
+          <div className="font-mono text-sm text-muted-foreground truncate">
+            {ellipseAddress(principal)}.{contractName}
           </div>
         </Link>
         {txId && (
@@ -43,7 +41,7 @@ export function ContractMatchCard({ principal, contractName, txId }: ContractMat
             href={`https://explorer.stxer.xyz/txid/${txId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-2"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-2 ml-8"
             onClick={(e) => e.stopPropagation()}
           >
             <span>View TX</span>

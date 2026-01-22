@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ExternalLink, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Comment } from "@/lexicon/types";
@@ -42,9 +43,9 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
       <CardContent className="p-4">
         {/* Header: Contract info on left, Author on right */}
         <div className="flex items-start justify-between gap-4 mb-3">
-          {/* Left: Contract identity with identicon */}
+          {/* Left: Contract identity with identicon and line pill */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <ContractIdenticon
                 value={contractPath}
                 size={20}
@@ -52,10 +53,21 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
               />
               <Link
                 to={getContractLink()}
-                className="font-mono text-sm text-foreground hover:text-primary transition-colors truncate"
+                className="font-mono text-sm text-muted-foreground hover:text-foreground transition-colors truncate"
               >
                 {ellipseAddress(comment.subject.principal)}.{comment.subject.contractName}
               </Link>
+              {/* Line indicator - moved to header */}
+              {comment.lineNumber && (
+                <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                  L{comment.lineNumber}
+                </span>
+              )}
+              {comment.lineRange && (
+                <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                  L{comment.lineRange.start}-{comment.lineRange.end}
+                </span>
+              )}
             </div>
             {txId && (
               <a
@@ -103,18 +115,21 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
             </div>
           )}
           <p className="text-foreground leading-relaxed">{comment.text}</p>
-          
-          {/* Line indicator */}
-          {comment.lineNumber && (
-            <div className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-              Line {comment.lineNumber}
-            </div>
-          )}
-          {comment.lineRange && (
-            <div className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-              Lines {comment.lineRange.start}-{comment.lineRange.end}
-            </div>
-          )}
+        </div>
+
+        {/* Footer: Reply action */}
+        <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/50">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            asChild
+          >
+            <Link to={getContractLink()}>
+              <MessageSquare className="h-3 w-3 mr-1" />
+              Reply
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
