@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Contract } from "@/types/contract";
 import { useComments } from "@/hooks/useComments";
 import { useClarityHighlighter } from "@/hooks/useClarityHighlighter";
@@ -13,10 +13,35 @@ import type { Comment } from "@/lexicon/types";
 interface ContractViewerProps {
   contract: Contract;
   currentUserDid?: string;
+  initialSelectedLine?: number;
+  initialLineRange?: { start: number; end: number };
 }
 
-export function ContractViewer({ contract, currentUserDid }: ContractViewerProps) {
-  const [selectedLine, setSelectedLine] = useState<number | null>(null);
+export function ContractViewer({
+  contract,
+  currentUserDid,
+  initialSelectedLine,
+  initialLineRange,
+}: ContractViewerProps) {
+  const [selectedLine, setSelectedLine] = useState<number | null>(
+    initialSelectedLine ?? initialLineRange?.start ?? null
+  );
+
+  // Scroll to line on mount when deep-linked
+  useEffect(() => {
+    if (initialSelectedLine || initialLineRange) {
+      const lineNum = initialSelectedLine || initialLineRange?.start;
+      if (lineNum) {
+        // Small delay to ensure DOM is rendered
+        setTimeout(() => {
+          const element = document.getElementById(`line-${lineNum}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      }
+    }
+  }, [initialSelectedLine, initialLineRange]);
   const lines = contract.source_code.split("\n");
 
   // Detect theme - check if dark class is on html element
@@ -67,6 +92,7 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                 return (
                   <div
                     key={lineNum}
+                    id={`line-${lineNum}`}
                     className={`flex group hover:bg-muted/50 cursor-pointer ${
                       isSelected ? "bg-primary/10" : ""
                     } ${hasComments ? "bg-accent/20" : ""}`}

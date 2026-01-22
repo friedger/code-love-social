@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
 import { ContractViewer } from "@/components/ContractViewer";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
@@ -8,12 +8,25 @@ import { PageHeader } from "@/components/PageHeader";
 
 const ContractPage = () => {
   const { contractId } = useParams<{ contractId: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAtprotoAuth();
 
   // Parse principal.name format
   const lastDotIndex = contractId?.lastIndexOf(".") ?? -1;
   const principal = lastDotIndex > 0 ? contractId!.slice(0, lastDotIndex) : "";
   const name = lastDotIndex > 0 ? contractId!.slice(lastDotIndex + 1) : "";
+
+  // Parse line parameters for deep linking
+  const lineParam = searchParams.get("line");
+  const linesParam = searchParams.get("lines");
+
+  const initialLine = lineParam ? parseInt(lineParam, 10) : undefined;
+  const initialRange = linesParam
+    ? {
+        start: parseInt(linesParam.split("-")[0], 10),
+        end: parseInt(linesParam.split("-")[1], 10),
+      }
+    : undefined;
 
   const { data: contract, isLoading, error } = useContract(principal, name);
 
@@ -51,7 +64,12 @@ const ContractPage = () => {
                 <p className="text-muted-foreground mt-1">{contract.description}</p>
               )}
             </div>
-            <ContractViewer contract={contract} currentUserDid={user?.did} />
+            <ContractViewer
+              contract={contract}
+              currentUserDid={user?.did}
+              initialSelectedLine={initialLine}
+              initialLineRange={initialRange}
+            />
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">

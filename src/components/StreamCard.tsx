@@ -5,6 +5,7 @@ import { ExternalLink, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Comment } from "@/lexicon/types";
 import type { ProfileData } from "@/lib/comments-api";
+import { ContractIdenticon } from "./ContractIdenticon";
 
 interface StreamCardProps {
   comment: Comment;
@@ -25,25 +26,37 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
   const txId = comment.subject.txId;
   const isReply = !!comment.parentId;
 
+  // Build deep link with line info
+  const getContractLink = () => {
+    let url = `/contract/${contractPath}`;
+    if (comment.lineNumber) {
+      url += `?line=${comment.lineNumber}`;
+    } else if (comment.lineRange) {
+      url += `?lines=${comment.lineRange.start}-${comment.lineRange.end}`;
+    }
+    return url;
+  };
+
   return (
     <Card className="hover:bg-accent/30 transition-colors">
       <CardContent className="p-4">
         {/* Header: Contract info on left, Author on right */}
         <div className="flex items-start justify-between gap-4 mb-3">
-          {/* Left: Contract identity */}
+          {/* Left: Contract identity with identicon */}
           <div className="min-w-0 flex-1">
-            <Link
-              to={`/contract/${contractPath}`}
-              className="group flex items-baseline gap-1.5 text-foreground hover:text-primary transition-colors"
-            >
-              <span className="font-mono text-sm text-muted-foreground">
-                {ellipseAddress(comment.subject.principal)}
-              </span>
-              <span className="text-muted-foreground">/</span>
-              <span className="font-semibold truncate">
-                {comment.subject.contractName}
-              </span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <ContractIdenticon
+                value={contractPath}
+                size={20}
+                className="shrink-0 rounded-sm"
+              />
+              <Link
+                to={getContractLink()}
+                className="font-mono text-sm text-foreground hover:text-primary transition-colors truncate"
+              >
+                {ellipseAddress(comment.subject.principal)}.{comment.subject.contractName}
+              </Link>
+            </div>
             {txId && (
               <a
                 href={`https://explorer.stxer.xyz/txid/${txId}`}
