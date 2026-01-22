@@ -183,14 +183,20 @@ serve(async (req) => {
       const stream = url.searchParams.get("stream");
       const limit = parseInt(url.searchParams.get("limit") || "50", 10);
 
+      const search = url.searchParams.get("search");
+
       let query = supabase
         .from("comments_index")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(Math.min(limit, 100));
 
+      // Search mode - search comments by text content
+      if (search) {
+        query = query.ilike("text", `%${search}%`);
+      }
       // Stream mode - get all recent comments
-      if (stream === "true") {
+      else if (stream === "true") {
         // No additional filters, just get latest
       }
       // Author mode - get comments by specific user
@@ -213,7 +219,7 @@ serve(async (req) => {
         }
       } else {
         return new Response(
-          JSON.stringify({ error: "Missing required parameters: provide principal+contractName, authorDid, or stream=true" }),
+          JSON.stringify({ error: "Missing required parameters: provide principal+contractName, authorDid, search, or stream=true" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

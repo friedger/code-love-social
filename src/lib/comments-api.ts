@@ -208,6 +208,29 @@ export async function getCommentsStream(limit = 50): Promise<CommentsWithProfile
 }
 
 /**
+ * Search comments by text content
+ */
+export async function searchComments(query: string, limit = 50): Promise<CommentsWithProfiles> {
+  const params = new URLSearchParams({ search: query, limit: limit.toString() });
+
+  const response = await fetch(`${COMMENTS_URL}?${params.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to search comments");
+  }
+
+  const data: CommentsResponse = await response.json();
+  return {
+    comments: data.comments.map((row) => indexRowToComment(row)),
+    profiles: data.profiles || {},
+  };
+}
+
+/**
  * Create a new comment
  */
 export async function createComment(params: CreateCommentParams): Promise<CreateCommentResponse> {
