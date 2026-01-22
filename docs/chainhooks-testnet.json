@@ -1,0 +1,21 @@
+{
+  "version": "1",
+  "name": "Source of Clarity - Testnet Contract Deployments",
+  "chain": "stacks",
+  "network": "testnet",
+  "filters": {
+    "events": [
+      {
+        "type": "contract_deploy"
+      }
+    ]
+  },
+  "action": {
+    "type": "http_post",
+    "url": "https://uxaxgrdxikvligkjyyxz.supabase.co/functions/v1/chainhook-contracts"
+  },
+  "options": {
+    "decode_clarity_values": false,
+    "enable_on_registration": true
+  }
+}

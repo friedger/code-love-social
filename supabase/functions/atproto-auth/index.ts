@@ -195,12 +195,9 @@ async function getAuthServerMetadata(authServerUrl: string): Promise<{
 // This restricts permissions to only our custom lexicon actions
 const OAUTH_SCOPES = [
   "atproto",
-  // Comments: create and delete
-  "repo:*?collection=com.source-of-clarity.temp.comment&action=create,delete",
-  // Reactions: create and delete
-  "repo:*?collection=com.source-of-clarity.temp.reaction&action=create,delete",
-  // Follow/unfollow: create and delete
-  "repo:*?collection=app.bsky.graph.follow&action=create,delete",
+  "repo:com.source-of-clarity.temp.comment?action=create,delete",
+  "repo:com.source-of-clarity.temp.reaction?action=create,delete",
+  "repo:app.bsky.graph.follow?action=create,delete",
 ].join(" ");
 
 // Get the client metadata (this function's URL serves as client_id)
