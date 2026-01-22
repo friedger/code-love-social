@@ -3,8 +3,9 @@ import { useContract } from "@/hooks/useContracts";
 import { ContractViewer } from "@/components/ContractViewer";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { FileCode, Loader2, ArrowLeft, AlertCircle } from "lucide-react";
+import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.png";
 
 const ContractPage = () => {
   const { contractId } = useParams<{ contractId: string }>();
@@ -24,10 +25,10 @@ const ContractPage = () => {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <FileCode className="h-8 w-8 text-primary" />
+              <img src={logo} alt="Source of Clarity" className="h-8 w-8" />
               <div>
-                <h1 className="font-bold text-lg text-foreground">Clarity Social</h1>
-                <p className="text-xs text-muted-foreground">Discuss smart contracts on AT Protocol</p>
+                <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
+                <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
               </div>
             </Link>
           </div>
