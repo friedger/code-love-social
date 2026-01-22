@@ -9,8 +9,9 @@ import { FileCode, Loader2 } from "lucide-react";
 
 const Index = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { user, isLoading: authLoading, login, logout } = useAtprotoAuth();
-  const { data: contracts, isLoading: contractsLoading } = useContracts();
+  const { data: contracts, isLoading: contractsLoading } = useContracts(searchQuery);
 
   // Auto-select first contract when loaded
   useEffect(() => {
@@ -50,6 +51,8 @@ const Index = () => {
               isLoading={contractsLoading}
               onSelect={setSelectedContract}
               selectedId={selectedContract?.id}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
             />
           </aside>
 
