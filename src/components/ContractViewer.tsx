@@ -80,8 +80,8 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                     </span>
                     {/* Line number column - fixed width based on max digits */}
                     <span 
-                      className="shrink-0 text-right pr-3 text-muted-foreground select-none border-r border-border tabular-nums"
-                      style={{ minWidth: `${Math.max(2, String(lines.length).length)}ch` }}
+                      className="shrink-0 text-right pr-3 pl-1 text-muted-foreground select-none border-r border-border tabular-nums"
+                      style={{ width: `${Math.max(2, String(lines.length).length) + 1}ch` }}
                     >
                       {lineNum}
                     </span>
