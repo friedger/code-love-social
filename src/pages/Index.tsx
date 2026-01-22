@@ -1,14 +1,23 @@
-import { useState } from "react";
-import { contracts, Contract } from "@/data/dummyContracts";
+import { useState, useEffect } from "react";
+import { Contract } from "@/types/contract";
+import { useContracts } from "@/hooks/useContracts";
 import { ContractSearch } from "@/components/ContractSearch";
 import { ContractViewer } from "@/components/ContractViewer";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { FileCode } from "lucide-react";
+import { FileCode, Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [selectedContract, setSelectedContract] = useState<Contract>(contracts[0]);
-  const { user, isLoading, login, logout } = useAtprotoAuth();
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const { user, isLoading: authLoading, login, logout } = useAtprotoAuth();
+  const { data: contracts, isLoading: contractsLoading } = useContracts();
+
+  // Auto-select first contract when loaded
+  useEffect(() => {
+    if (contracts && contracts.length > 0 && !selectedContract) {
+      setSelectedContract(contracts[0]);
+    }
+  }, [contracts, selectedContract]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,7 +33,7 @@ const Index = () => {
           </div>
           <AuthButton
             user={user}
-            isLoading={isLoading}
+            isLoading={authLoading}
             onLogin={login}
             onLogout={logout}
           />
@@ -36,12 +45,22 @@ const Index = () => {
         <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="w-80 shrink-0">
-            <ContractSearch onSelect={setSelectedContract} selectedId={selectedContract?.id} />
+            <ContractSearch
+              contracts={contracts ?? []}
+              isLoading={contractsLoading}
+              onSelect={setSelectedContract}
+              selectedId={selectedContract?.id}
+            />
           </aside>
 
           {/* Contract Viewer */}
           <main className="flex-1 min-w-0">
-            {selectedContract ? (
+            {contractsLoading ? (
+              <div className="flex items-center justify-center h-96 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                Loading contracts...
+              </div>
+            ) : selectedContract ? (
               <>
                 <div className="mb-4">
                   <h2 className="text-xl font-semibold text-foreground">{selectedContract.name}</h2>
@@ -51,7 +70,9 @@ const Index = () => {
               </>
             ) : (
               <div className="flex items-center justify-center h-96 text-muted-foreground">
-                Select a contract to view
+                {contracts && contracts.length === 0
+                  ? "No contracts found"
+                  : "Select a contract to view"}
               </div>
             )}
           </main>

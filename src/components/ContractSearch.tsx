@@ -1,18 +1,39 @@
-import { useState } from "react";
-import { contracts, Contract, searchContracts } from "@/data/dummyContracts";
+import { useState, useMemo } from "react";
+import { Contract } from "@/types/contract";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileCode } from "lucide-react";
+import { Search, FileCode, Loader2 } from "lucide-react";
 
 interface ContractSearchProps {
+  contracts: Contract[];
+  isLoading: boolean;
   onSelect: (contract: Contract) => void;
   selectedId?: string;
 }
 
-export function ContractSearch({ onSelect, selectedId }: ContractSearchProps) {
+export function ContractSearch({ contracts, isLoading, onSelect, selectedId }: ContractSearchProps) {
   const [query, setQuery] = useState("");
-  const filtered = query ? searchContracts(query) : contracts;
+
+  const filtered = useMemo(() => {
+    if (!query) return contracts;
+    const lowerQuery = query.toLowerCase();
+    return contracts.filter(
+      (c) =>
+        c.name.toLowerCase().includes(lowerQuery) ||
+        c.description?.toLowerCase().includes(lowerQuery) ||
+        c.category?.toLowerCase().includes(lowerQuery)
+    );
+  }, [contracts, query]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading contracts...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -27,32 +48,42 @@ export function ContractSearch({ onSelect, selectedId }: ContractSearchProps) {
       </div>
 
       <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
-        {filtered.map((contract) => (
-          <Card
-            key={contract.id}
-            className={`p-3 cursor-pointer transition-colors hover:bg-accent ${
-              selectedId === contract.id ? "bg-accent border-primary" : ""
-            }`}
-            onClick={() => onSelect(contract)}
-          >
-            <div className="flex items-start gap-3">
-              <FileCode className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-medium text-sm text-foreground truncate">
-                    {contract.name}
-                  </span>
-                  <Badge variant="outline" className="text-[10px] shrink-0">
-                    {contract.category}
-                  </Badge>
+        {filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No contracts found
+          </p>
+        ) : (
+          filtered.map((contract) => (
+            <Card
+              key={contract.id}
+              className={`p-3 cursor-pointer transition-colors hover:bg-accent ${
+                selectedId === contract.id ? "bg-accent border-primary" : ""
+              }`}
+              onClick={() => onSelect(contract)}
+            >
+              <div className="flex items-start gap-3">
+                <FileCode className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-medium text-sm text-foreground truncate">
+                      {contract.name}
+                    </span>
+                    {contract.category && (
+                      <Badge variant="outline" className="text-[10px] shrink-0">
+                        {contract.category}
+                      </Badge>
+                    )}
+                  </div>
+                  {contract.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                      {contract.description}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                  {contract.description}
-                </p>
               </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
