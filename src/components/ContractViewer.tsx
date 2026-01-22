@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Contract } from "@/types/contract";
 import { useComments } from "@/hooks/useComments";
+import { useClarityHighlighter } from "@/hooks/useClarityHighlighter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { CommentThread } from "./CommentThread";
 import { ContractComments } from "./ContractComments";
+import { HighlightedCodeLine } from "./HighlightedCodeLine";
 import type { Comment } from "@/lexicon/types";
 
 interface ContractViewerProps {
@@ -16,6 +18,15 @@ interface ContractViewerProps {
 export function ContractViewer({ contract, currentUserDid }: ContractViewerProps) {
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const lines = contract.source_code.split("\n");
+
+  // Detect theme - check if dark class is on html element
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+
+  // Syntax highlighting
+  const { highlightLines, isReady } = useClarityHighlighter();
+  const highlightedLines = useMemo(() => {
+    return highlightLines(contract.source_code, isDark ? "dark" : "light");
+  }, [contract.source_code, isDark, highlightLines]);
 
   // Fetch all comments for this contract
   const { data } = useComments({
@@ -85,7 +96,13 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                     >
                       {lineNum}
                     </span>
-                    <code className="flex-1 px-4 py-0.5 text-foreground whitespace-pre">{line}</code>
+                    <code className="flex-1 px-4 py-0.5 whitespace-pre font-mono">
+                      {isReady && highlightedLines[idx] ? (
+                        <HighlightedCodeLine tokens={highlightedLines[idx].tokens} />
+                      ) : (
+                        <span className="text-foreground">{line}</span>
+                      )}
+                    </code>
                     <Button
                       variant="ghost"
                       size="sm"
