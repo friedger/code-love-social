@@ -106,6 +106,7 @@ const Index = () => {
                   principal={selectedContract.principal}
                   contractName={selectedContract.name}
                   txId={selectedContract.tx_id}
+                  sourceHash={selectedContract.source_hash}
                   description={selectedContract.description}
                 />
                 <ContractViewer contract={selectedContract} currentUserDid={user?.did} />

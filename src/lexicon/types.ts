@@ -8,6 +8,8 @@ export interface ContractRef {
   contractName: string;
   /** Transaction ID of the contract deployment */
   txId: string;
+  /** SHA-256 hash of source code (optional, for identicon generation) */
+  sourceHash?: string;
 }
 
 /** Range of lines in source code */
