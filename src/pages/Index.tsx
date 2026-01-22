@@ -5,7 +5,8 @@ import { ContractSearch } from "@/components/ContractSearch";
 import { ContractViewer } from "@/components/ContractViewer";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { FileCode, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
@@ -26,7 +27,7 @@ const Index = () => {
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <FileCode className="h-8 w-8 text-primary" />
+            <img src={logo} alt="Source of Clarity" className="h-8 w-8" />
             <div>
               <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
               <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
