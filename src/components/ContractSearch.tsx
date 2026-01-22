@@ -1,4 +1,3 @@
-import { useState, useMemo } from "react";
 import { Contract } from "@/types/contract";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -10,21 +9,11 @@ interface ContractSearchProps {
   isLoading: boolean;
   onSelect: (contract: Contract) => void;
   selectedId?: string;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
-export function ContractSearch({ contracts, isLoading, onSelect, selectedId }: ContractSearchProps) {
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    if (!query) return contracts;
-    const lowerQuery = query.toLowerCase();
-    return contracts.filter(
-      (c) =>
-        c.name.toLowerCase().includes(lowerQuery) ||
-        c.description?.toLowerCase().includes(lowerQuery) ||
-        c.category?.toLowerCase().includes(lowerQuery)
-    );
-  }, [contracts, query]);
+export function ContractSearch({ contracts, isLoading, onSelect, selectedId, searchQuery, onSearchChange }: ContractSearchProps) {
 
   if (isLoading) {
     return (
@@ -41,19 +30,19 @@ export function ContractSearch({ contracts, isLoading, onSelect, selectedId }: C
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search contracts..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"
         />
       </div>
 
       <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
-        {filtered.length === 0 ? (
+        {contracts.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             No contracts found
           </p>
         ) : (
-          filtered.map((contract) => (
+          contracts.map((contract) => (
             <Card
               key={contract.id}
               className={`p-3 cursor-pointer transition-colors hover:bg-accent ${
