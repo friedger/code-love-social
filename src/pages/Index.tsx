@@ -4,6 +4,7 @@ import { Contract } from "@/types/contract";
 import { useContracts } from "@/hooks/useContracts";
 import { ContractSearch } from "@/components/ContractSearch";
 import { ContractViewer } from "@/components/ContractViewer";
+import { ContractHeader } from "@/components/ContractHeader";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
 import { Loader2, AlertTriangle, Home } from "lucide-react";
@@ -101,10 +102,12 @@ const Index = () => {
               </div>
             ) : selectedContract ? (
               <>
-                <div className="mb-4">
-                  <h2 className="text-xl font-semibold text-foreground">{selectedContract.name}</h2>
-                  <p className="text-muted-foreground">{selectedContract.description}</p>
-                </div>
+                <ContractHeader
+                  principal={selectedContract.principal}
+                  contractName={selectedContract.name}
+                  txId={selectedContract.tx_id}
+                  description={selectedContract.description}
+                />
                 <ContractViewer contract={selectedContract} currentUserDid={user?.did} />
               </>
             ) : (
