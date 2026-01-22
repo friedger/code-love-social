@@ -3,13 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encode as encodeHex } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 
 /**
- * Compute SHA-256 hash of source code for identicon generation
+ * Compute SHA-512/256 hash of source code for identicon generation.
+ * Uses SHA-512 truncated to first 256 bits.
  */
 async function computeSourceHash(sourceCode: string): Promise<string> {
   const data = new TextEncoder().encode(sourceCode);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = new Uint8Array(hashBuffer);
-  const hexBytes = encodeHex(hashArray);
+  const hashBuffer = await crypto.subtle.digest("SHA-512", data);
+  const truncated = new Uint8Array(hashBuffer).slice(0, 32);
+  const hexBytes = encodeHex(truncated);
   return new TextDecoder().decode(hexBytes);
 }
 
