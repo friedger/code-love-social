@@ -9,6 +9,7 @@ import { MessageSquare, Search, AlertTriangle, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { StreamCard } from "@/components/StreamCard";
 import { ContractMatchCard } from "@/components/ContractMatchCard";
+import { getContractPath } from "@/lib/utils";
 
 const StreamPage = () => {
   const [inputValue, setInputValue] = useState("");
@@ -44,7 +45,7 @@ const StreamPage = () => {
     const contracts: { principal: string; contractName: string; txId?: string }[] = [];
 
     for (const comment of searchQuery.data.comments) {
-      const key = `${comment.subject.principal}.${comment.subject.contractName}`;
+      const key = getContractPath(comment.subject.principal, comment.subject.contractName);
       if (!seen.has(key) && contracts.length < 3) {
         seen.add(key);
         contracts.push({

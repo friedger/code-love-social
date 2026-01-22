@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
 import { ContractIdenticon } from "./ContractIdenticon";
+import { formatContractId, getContractPath } from "@/lib/utils";
 
 interface ContractMatchCardProps {
   principal: string;
@@ -9,16 +10,8 @@ interface ContractMatchCardProps {
   txId?: string;
 }
 
-/**
- * Ellipse a Stacks address for display
- */
-function ellipseAddress(address: string, prefixChars = 6, suffixChars = 4): string {
-  if (address.length <= prefixChars + suffixChars + 3) return address;
-  return `${address.slice(0, prefixChars)}...${address.slice(-suffixChars)}`;
-}
-
 export function ContractMatchCard({ principal, contractName, txId }: ContractMatchCardProps) {
-  const contractPath = `${principal}.${contractName}`;
+  const contractPath = getContractPath(principal, contractName);
 
   return (
     <Card className="hover:bg-accent/50 transition-colors">
@@ -33,7 +26,7 @@ export function ContractMatchCard({ principal, contractName, txId }: ContractMat
             className="shrink-0 rounded-sm"
           />
           <div className="font-mono text-sm text-muted-foreground truncate">
-            {ellipseAddress(principal)}.{contractName}
+            {formatContractId(principal, contractName)}
           </div>
         </Link>
         {txId && (

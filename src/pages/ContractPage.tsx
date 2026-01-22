@@ -2,9 +2,14 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
 import { ContractViewer } from "@/components/ContractViewer";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
+import { Loader2, ArrowLeft, AlertCircle, ExternalLink, SmilePlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
+import { ContractIdenticon } from "@/components/ContractIdenticon";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatContractId, getContractPath } from "@/lib/utils";
+
+const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as const;
 
 const ContractPage = () => {
   const { contractId } = useParams<{ contractId: string }>();
@@ -57,12 +62,64 @@ const ContractPage = () => {
           </div>
         ) : contract ? (
           <>
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-foreground">{contract.name}</h2>
-              <p className="text-sm text-muted-foreground font-mono">{contract.principal}</p>
-              {contract.description && (
-                <p className="text-muted-foreground mt-1">{contract.description}</p>
-              )}
+            <div className="mb-6 flex items-start justify-between gap-4">
+              {/* Left: Contract identity */}
+              <div className="flex items-start gap-3 min-w-0">
+                <ContractIdenticon 
+                  value={getContractPath(contract.principal, contract.name)} 
+                  size={48} 
+                  className="shrink-0 rounded" 
+                />
+                <div className="min-w-0">
+                  <h2 className="font-mono text-lg text-foreground truncate">
+                    {formatContractId(contract.principal, contract.name)}
+                  </h2>
+                  {contract.tx_id && (
+                    <a
+                      href={`https://explorer.stxer.xyz/txid/${contract.tx_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <span>View on Explorer</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                  {contract.description && (
+                    <p className="text-muted-foreground text-sm mt-1">{contract.description}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Action buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <SmilePlus className="h-4 w-4" />
+                      <span className="hidden sm:inline">React</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2" align="end">
+                    <div className="flex gap-1">
+                      {REACTION_EMOJIS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          className="p-2 hover:bg-muted rounded text-xl"
+                          onClick={() => {/* TODO: Add contract-level reaction */}}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="hidden sm:inline">Comment</span>
+                </Button>
+              </div>
             </div>
             <ContractViewer
               contract={contract}

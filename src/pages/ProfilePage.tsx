@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { FollowingAvatars } from "@/components/FollowingAvatars";
 import { FollowButton } from "@/components/FollowButton";
 import { PageHeader } from "@/components/PageHeader";
+import { getContractPath } from "@/lib/utils";
 
 const ProfilePage = () => {
   const { did: identifier } = useParams<{ did: string }>();
@@ -154,7 +155,7 @@ const ProfilePage = () => {
                     <p className="text-foreground mb-2">{comment.text}</p>
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <Link
-                        to={`/contract/${comment.subject.principal}.${comment.subject.contractName}`}
+                        to={`/contract/${getContractPath(comment.subject.principal, comment.subject.contractName)}`}
                         className="flex items-center gap-1 hover:text-primary transition-colors"
                       >
                         <FileCode className="h-4 w-4" />
