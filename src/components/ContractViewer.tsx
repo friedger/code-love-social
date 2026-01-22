@@ -60,7 +60,8 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                     } ${hasComments ? "bg-accent/20" : ""}`}
                     onClick={() => setSelectedLine(isSelected ? null : lineNum)}
                   >
-                    <span className="w-12 text-right pr-4 text-muted-foreground select-none border-r border-border flex items-center justify-end gap-1">
+                    {/* Avatar column - fixed width */}
+                    <span className="w-8 shrink-0 flex items-center justify-center">
                       {hasComments && (
                         <div className="flex -space-x-1">
                           {lineComments.slice(0, 2).map((c) => {
@@ -76,6 +77,12 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                           })}
                         </div>
                       )}
+                    </span>
+                    {/* Line number column - fixed width based on max digits */}
+                    <span 
+                      className="shrink-0 text-right pr-3 text-muted-foreground select-none border-r border-border tabular-nums"
+                      style={{ minWidth: `${Math.max(2, String(lines.length).length)}ch` }}
+                    >
                       {lineNum}
                     </span>
                     <code className="flex-1 px-4 py-0.5 text-foreground whitespace-pre">{line}</code>
