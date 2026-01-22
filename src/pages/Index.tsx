@@ -5,24 +5,43 @@ import { ContractSearch } from "@/components/ContractSearch";
 import { ContractViewer } from "@/components/ContractViewer";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const Index = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const { user, isLoading: authLoading, login, logout } = useAtprotoAuth();
-  const { data: contracts, isLoading: contractsLoading } = useContracts(searchQuery);
+  const { data: contracts, isLoading, isFetching } = useContracts(debouncedSearch);
 
-  // Auto-select first contract when loaded
+  // Debounce search - only update after 300ms of no typing
   useEffect(() => {
-    if (contracts && contracts.length > 0 && !selectedContract) {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(inputValue);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  // Auto-select first contract when search results change
+  useEffect(() => {
+    if (contracts && contracts.length > 0) {
       setSelectedContract(contracts[0]);
+    } else if (contracts && contracts.length === 0) {
+      setSelectedContract(null);
     }
-  }, [contracts, selectedContract]);
+  }, [contracts]);
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Temporary Banner */}
+      <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2">
+        <div className="container mx-auto flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>All comments are temporary and may require migration to a new namespace in the future.</span>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -49,17 +68,23 @@ const Index = () => {
           <aside className="w-80 shrink-0">
             <ContractSearch
               contracts={contracts ?? []}
-              isLoading={contractsLoading}
+              isLoading={isLoading && !contracts}
+              isFetching={isFetching}
               onSelect={setSelectedContract}
               selectedId={selectedContract?.id}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+              searchQuery={inputValue}
+              onSearchChange={setInputValue}
             />
           </aside>
 
           {/* Contract Viewer */}
-          <main className="flex-1 min-w-0">
-            {contractsLoading ? (
+          <main className="flex-1 min-w-0 relative">
+            {isFetching && (
+              <div className="absolute top-2 right-2 z-10">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {isLoading && !contracts ? (
               <div className="flex items-center justify-center h-96 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 Loading contracts...
