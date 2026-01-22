@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Search, FileCode, Loader2, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getContractPath } from "@/lib/utils";
 
 interface ContractSearchProps {
   contracts: Contract[];
@@ -50,7 +51,7 @@ export function ContractSearch({ contracts, isLoading, isFetching, onSelect, sel
           </p>
         ) : (
           contracts.map((contract) => {
-            const contractPath = `/contract/${contract.principal}.${contract.name}`;
+            const contractPath = `/contract/${getContractPath(contract.principal, contract.name)}`;
             return (
               <Card
                 key={contract.id}

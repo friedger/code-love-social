@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { Comment, KNOWN_REACTIONS } from "@/lexicon/types";
 import type { ProfileData } from "@/lib/comments-api";
 import { ContractIdenticon } from "./ContractIdenticon";
+import { formatContractId, getContractPath } from "@/lib/utils";
 
 interface StreamCardProps {
   comment: Comment;
@@ -16,13 +17,8 @@ interface StreamCardProps {
 
 const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as const;
 
-function ellipseAddress(address: string, prefixChars = 6, suffixChars = 6): string {
-  if (address.length <= prefixChars + suffixChars + 3) return address;
-  return `${address.slice(0, prefixChars)}...${address.slice(-suffixChars)}`;
-}
-
 export function StreamCard({ comment, profile }: StreamCardProps) {
-  const contractPath = `${comment.subject.principal}.${comment.subject.contractName}`;
+  const contractPath = getContractPath(comment.subject.principal, comment.subject.contractName);
   const txId = comment.subject.txId;
   const isReply = !!comment.parentId;
   const reactions = comment.reactions || {};
@@ -49,7 +45,7 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
                 to={getContractLink()}
                 className="font-mono text-sm text-muted-foreground hover:text-foreground transition-colors truncate"
               >
-                {ellipseAddress(comment.subject.principal)}.{comment.subject.contractName}
+                {formatContractId(comment.subject.principal, comment.subject.contractName)}
               </Link>
               {comment.lineNumber && (
                 <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
