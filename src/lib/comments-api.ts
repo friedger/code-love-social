@@ -68,6 +68,11 @@ export interface ReactionResponse {
   rkey: string;
 }
 
+export interface ContractReactionsResponse {
+  reactions: Record<string, number>;
+  userReaction?: { emoji: string; uri: string };
+}
+
 /**
  * Get authorization headers for authenticated requests
  */
@@ -323,4 +328,48 @@ export async function deleteComment(rkey: string): Promise<void> {
     const error = await response.json();
     throw new Error(error.error || "Failed to delete comment");
   }
+}
+
+/**
+ * Get reactions for a contract (not a comment)
+ */
+export async function getContractReactions(
+  principal: string,
+  contractName: string
+): Promise<ContractReactionsResponse> {
+  const params = new URLSearchParams({ principal, contractName });
+  const response = await fetch(`${COMMENTS_URL}/contract-reactions?${params.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    // Return empty reactions on error
+    return { reactions: {} };
+  }
+
+  return response.json();
+}
+
+/**
+ * Add a reaction to a contract (not a comment)
+ */
+export async function addContractReaction(
+  principal: string,
+  contractName: string,
+  txId: string | undefined,
+  emoji: string
+): Promise<{ uri?: string; removed?: boolean }> {
+  const response = await fetch(`${COMMENTS_URL}/contract-reaction`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ principal, contractName, txId, emoji }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to add reaction");
+  }
+
+  return response.json();
 }

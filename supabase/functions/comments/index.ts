@@ -491,6 +491,189 @@ serve(async (req) => {
       });
     }
 
+    // ============== GET /comments/contract-reactions ==============
+    // Get reactions for a contract (not a comment)
+    if (req.method === "GET" && pathParts.length === 2 && pathParts[1] === "contract-reactions") {
+      const principal = url.searchParams.get("principal");
+      const contractName = url.searchParams.get("contractName");
+
+      if (!principal || !contractName) {
+        return new Response(
+          JSON.stringify({ error: "Missing principal or contractName" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Build synthetic subject URI
+      const subjectUri = `contract://${principal}.${contractName}`;
+
+      // Fetch all reactions for this contract
+      const { data: reactionsData, error: reactionsError } = await supabase
+        .from("likes_index")
+        .select("*")
+        .eq("subject_uri", subjectUri);
+
+      if (reactionsError) {
+        console.error("Failed to fetch contract reactions:", reactionsError);
+        return new Response(
+          JSON.stringify({ reactions: {} }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Aggregate reactions by emoji
+      const reactions: Record<string, number> = {};
+      for (const r of reactionsData || []) {
+        reactions[r.emoji] = (reactions[r.emoji] || 0) + 1;
+      }
+
+      // Check if current user has reacted (if auth header present)
+      let userReaction: { emoji: string; uri: string } | undefined;
+      const authHeader = req.headers.get("Authorization");
+      const sessionToken = authHeader?.replace("Bearer ", "");
+
+      if (sessionToken) {
+        try {
+          const { session } = await getValidSession(sessionToken);
+          const userReactionRow = (reactionsData || []).find(
+            (r) => r.author_did === session.did
+          );
+          if (userReactionRow) {
+            userReaction = { emoji: userReactionRow.emoji, uri: userReactionRow.uri };
+          }
+        } catch {
+          // Ignore auth errors for GET - just don't include userReaction
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ reactions, userReaction }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============== POST /comments/contract-reaction ==============
+    // Add/toggle a reaction to a contract
+    if (req.method === "POST" && pathParts.length === 2 && pathParts[1] === "contract-reaction") {
+      const authHeader = req.headers.get("Authorization");
+      const sessionToken = authHeader?.replace("Bearer ", "");
+
+      if (!sessionToken) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { session } = await getValidSession(sessionToken);
+      const body = await req.json();
+
+      const { principal, contractName, txId, emoji } = body;
+
+      if (!principal || !contractName || !emoji) {
+        return new Response(
+          JSON.stringify({ error: "Missing principal, contractName, or emoji" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Build synthetic subject
+      const subjectUri = `contract://${principal}.${contractName}`;
+      const subjectCid = txId || "";
+
+      // Check for existing reaction from this user on this contract
+      const { data: existing } = await supabase
+        .from("likes_index")
+        .select("*")
+        .eq("author_did", session.did)
+        .eq("subject_uri", subjectUri)
+        .single();
+
+      // Create authenticated agent
+      const agent = await createAuthenticatedAgent({
+        did: session.did,
+        pds_url: session.pds_url,
+        access_token: session.access_token,
+        dpop_private_key_jwk: session.dpop_private_key_jwk,
+      });
+
+      // If same emoji exists, toggle off (remove)
+      if (existing && existing.emoji === emoji) {
+        // Extract rkey from existing URI
+        const uriMatch = existing.uri.match(/at:\/\/([^/]+)\/([^/]+)\/([^/]+)/);
+        if (uriMatch) {
+          const [, , , rkey] = uriMatch;
+          await agent.com.atproto.repo.deleteRecord({
+            repo: session.did,
+            collection: REACTION_COLLECTION,
+            rkey,
+          });
+        }
+        await supabase.from("likes_index").delete().eq("id", existing.id);
+        return new Response(
+          JSON.stringify({ removed: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // If different emoji exists, remove old first
+      if (existing) {
+        const uriMatch = existing.uri.match(/at:\/\/([^/]+)\/([^/]+)\/([^/]+)/);
+        if (uriMatch) {
+          const [, , , rkey] = uriMatch;
+          await agent.com.atproto.repo.deleteRecord({
+            repo: session.did,
+            collection: REACTION_COLLECTION,
+            rkey,
+          });
+        }
+        await supabase.from("likes_index").delete().eq("id", existing.id);
+      }
+
+      // Create new reaction record
+      const reactionRecord = {
+        $type: REACTION_COLLECTION,
+        subject: {
+          uri: subjectUri,
+          cid: subjectCid,
+        },
+        emoji,
+        createdAt: new Date().toISOString(),
+      };
+
+      const rkey = generateTID();
+
+      const response = await agent.com.atproto.repo.putRecord({
+        repo: session.did,
+        collection: REACTION_COLLECTION,
+        rkey,
+        record: reactionRecord,
+      });
+
+      // Store in likes index
+      const { error: indexError } = await supabase.from("likes_index").insert({
+        uri: response.data.uri,
+        cid: response.data.cid,
+        author_did: session.did,
+        subject_uri: subjectUri,
+        subject_cid: subjectCid,
+        emoji,
+      });
+
+      if (indexError) {
+        console.error("Contract reaction index error:", indexError);
+      }
+
+      return new Response(
+        JSON.stringify({
+          uri: response.data.uri,
+          cid: response.data.cid,
+          rkey,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ============== DELETE /comments/:rkey ==============
     // Delete own comment
     if (req.method === "DELETE" && pathParts.length === 2 && pathParts[0] === "comments" && pathParts[1] !== "like") {
