@@ -12,17 +12,18 @@ import type { Comment } from "@/lexicon/types";
 interface CommentThreadProps {
   contractId: string;
   principal: string;
+  txId: string;
   lineNumber: number;
   currentUserDid?: string;
   onClose: () => void;
 }
 
-export function CommentThread({ contractId, principal, lineNumber, currentUserDid, onClose }: CommentThreadProps) {
+export function CommentThread({ contractId, principal, txId, lineNumber, currentUserDid, onClose }: CommentThreadProps) {
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
 
   const { data, isLoading, error } = useLineComments(
-    { principal, contractName: contractId },
+    { principal, contractName: contractId, txId },
     lineNumber
   );
 
@@ -39,7 +40,7 @@ export function CommentThread({ contractId, principal, lineNumber, currentUserDi
 
     try {
       await createCommentMutation.mutateAsync({
-        subject: { principal, contractName: contractId },
+        subject: { principal, contractName: contractId, txId },
         text: newComment.trim(),
         lineNumber,
         reply: replyTo ? {

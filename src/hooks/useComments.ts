@@ -32,7 +32,10 @@ export function useComments(contractRef: ContractRef, options?: { lineNumber?: n
       ? commentKeys.line(contractRef.principal, contractRef.contractName, options.lineNumber)
       : commentKeys.contract(contractRef.principal, contractRef.contractName),
     queryFn: () =>
-      getComments(contractRef.principal, contractRef.contractName, options),
+      getComments(contractRef.principal, contractRef.contractName, { 
+        ...options,
+        txId: contractRef.txId,
+      }),
     select: (data: CommentsWithProfiles) => data,
   });
 }

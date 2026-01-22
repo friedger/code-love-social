@@ -12,16 +12,18 @@ import type { Comment } from "@/lexicon/types";
 interface ContractCommentsProps {
   contractId: string;
   principal: string;
+  txId: string;
   currentUserDid?: string;
 }
 
-export function ContractComments({ contractId, principal, currentUserDid }: ContractCommentsProps) {
+export function ContractComments({ contractId, principal, txId, currentUserDid }: ContractCommentsProps) {
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
 
   const { data, isLoading, error } = useComments({
     principal,
     contractName: contractId,
+    txId,
   });
 
   const allComments = data?.comments || [];
@@ -39,7 +41,7 @@ export function ContractComments({ contractId, principal, currentUserDid }: Cont
 
     try {
       await createCommentMutation.mutateAsync({
-        subject: { principal, contractName: contractId },
+        subject: { principal, contractName: contractId, txId },
         text: newComment.trim(),
         // No lineNumber = contract-level comment
         reply: replyTo ? {

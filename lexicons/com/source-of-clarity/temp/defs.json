@@ -5,7 +5,7 @@
     "contractRef": {
       "type": "object",
       "description": "Reference to a Clarity smart contract on the Stacks blockchain",
-      "required": ["principal", "contractName"],
+      "required": ["principal", "contractName", "txId"],
       "properties": {
         "principal": {
           "type": "string",
@@ -15,6 +15,10 @@
           "type": "string",
           "description": "The name of the contract (e.g., alex-vault)",
           "maxLength": 128
+        },
+        "txId": {
+          "type": "string",
+          "description": "Transaction ID of the contract deployment, ensuring comments are bound to a specific deployment"
         }
       }
     },

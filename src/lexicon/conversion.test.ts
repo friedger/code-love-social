@@ -10,6 +10,8 @@ import {
 import { isValidCommentRecord, isValidLikeRecord } from './validation';
 import type { CommentRecord, Comment } from './types';
 
+const TEST_TX_ID = '0xtest123abc456def789';
+
 describe('Conversion helpers', () => {
   describe('toCommentRecord', () => {
     it('should convert a contract-level comment', () => {
@@ -19,6 +21,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         authorDid: 'did:plc:user1',
         text: 'Great contract architecture!',
@@ -33,6 +36,7 @@ describe('Conversion helpers', () => {
       expect(record.$type).toBe('com.source-of-clarity.temp.comment');
       expect(record.subject.principal).toBe('SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9');
       expect(record.subject.contractName).toBe('alex-vault');
+      expect(record.subject.txId).toBe(TEST_TX_ID);
       expect(record.text).toBe('Great contract architecture!');
       expect(record.lineNumber).toBeUndefined();
       expect(record.lineRange).toBeUndefined();
@@ -46,6 +50,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         lineNumber: 42,
         authorDid: 'did:plc:user1',
@@ -70,6 +75,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         lineRange: { start: 10, end: 20 },
         authorDid: 'did:plc:user1',
@@ -94,6 +100,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         lineNumber: 42,
         authorDid: 'did:plc:user2',
@@ -131,6 +138,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         lineNumber: 35,
         text: 'The asserts! check here is critical for security.',
@@ -162,6 +170,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9',
           contractName: 'alex-vault',
+          txId: TEST_TX_ID,
         },
         text: 'This is a reply.',
         reply: {
@@ -195,6 +204,7 @@ describe('Conversion helpers', () => {
         subject: {
           principal: 'SP123',
           contractName: 'test',
+          txId: TEST_TX_ID,
         },
         text: 'Simple comment',
         createdAt: '2026-01-21T15:30:00.000Z',
@@ -217,12 +227,13 @@ describe('Conversion helpers', () => {
   describe('createCommentRecord', () => {
     it('should create a contract-level comment', () => {
       const record = createCommentRecord(
-        { principal: 'SP123', contractName: 'test-contract' },
+        { principal: 'SP123', contractName: 'test-contract', txId: TEST_TX_ID },
         'This is a new comment.'
       );
 
       expect(record.$type).toBe('com.source-of-clarity.temp.comment');
       expect(record.subject.principal).toBe('SP123');
+      expect(record.subject.txId).toBe(TEST_TX_ID);
       expect(record.text).toBe('This is a new comment.');
       expect(record.lineNumber).toBeUndefined();
       expect(record.lineRange).toBeUndefined();
@@ -232,7 +243,7 @@ describe('Conversion helpers', () => {
 
     it('should create a line-specific comment', () => {
       const record = createCommentRecord(
-        { principal: 'SP123', contractName: 'test-contract' },
+        { principal: 'SP123', contractName: 'test-contract', txId: TEST_TX_ID },
         'Line comment.',
         { lineNumber: 50 }
       );
@@ -243,7 +254,7 @@ describe('Conversion helpers', () => {
 
     it('should create a range comment', () => {
       const record = createCommentRecord(
-        { principal: 'SP123', contractName: 'test-contract' },
+        { principal: 'SP123', contractName: 'test-contract', txId: TEST_TX_ID },
         'Range comment.',
         { lineRange: { start: 10, end: 20 } }
       );
@@ -254,7 +265,7 @@ describe('Conversion helpers', () => {
 
     it('should create a reply comment', () => {
       const record = createCommentRecord(
-        { principal: 'SP123', contractName: 'test-contract' },
+        { principal: 'SP123', contractName: 'test-contract', txId: TEST_TX_ID },
         'Reply comment.',
         {
           lineNumber: 42,

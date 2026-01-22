@@ -6,6 +6,8 @@ export interface ContractRef {
   principal: string;
   /** Name of the contract */
   contractName: string;
+  /** Transaction ID of the contract deployment */
+  txId: string;
 }
 
 /** Range of lines in source code */

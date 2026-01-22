@@ -103,6 +103,7 @@ async function getValidSession(sessionToken: string): Promise<{
 function validateCommentInput(body: unknown): {
   principal: string;
   contractName: string;
+  txId?: string;
   text: string;
   lineNumber?: number;
   lineRange?: { start: number; end: number };
@@ -152,6 +153,7 @@ function validateCommentInput(body: unknown): {
   return {
     principal: obj.principal as string,
     contractName: obj.contractName as string,
+    txId: obj.txId as string | undefined,
     text: obj.text as string,
     lineNumber: obj.lineNumber as number | undefined,
     lineRange: obj.lineRange as { start: number; end: number } | undefined,
@@ -176,6 +178,7 @@ serve(async (req) => {
       const principal = url.searchParams.get("principal");
       const contractName = url.searchParams.get("contractName");
       const lineNumber = url.searchParams.get("lineNumber");
+      const txId = url.searchParams.get("txId");
 
       if (!principal || !contractName) {
         return new Response(
@@ -194,6 +197,10 @@ serve(async (req) => {
 
       if (lineNumber) {
         query = query.eq("line_number", parseInt(lineNumber, 10));
+      }
+
+      if (txId) {
+        query = query.eq("tx_id", txId);
       }
 
       const { data: comments, error: queryError } = await query;
@@ -271,6 +278,7 @@ serve(async (req) => {
         subject: {
           principal: input.principal,
           contractName: input.contractName,
+          txId: input.txId,
         },
         text: input.text,
         createdAt: new Date().toISOString(),
@@ -304,6 +312,7 @@ serve(async (req) => {
         author_did: session.did,
         principal: input.principal,
         contract_name: input.contractName,
+        tx_id: input.txId,
         line_number: input.lineNumber,
         line_range_start: input.lineRange?.start,
         line_range_end: input.lineRange?.end,
