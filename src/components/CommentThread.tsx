@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useLineComments, useCreateComment, useLikeComment, getRepliesFromComments, getRootComments } from "@/hooks/useComments";
-import { getUserByDid, getRelationship, User } from "@/data/dummyUsers";
+import { useLineComments, useCreateComment, useLikeComment, getRepliesFromComments, getRootComments, ProfileData } from "@/hooks/useComments";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, X, UserCheck, UserPlus, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, X, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import type { Comment } from "@/lexicon/types";
@@ -23,10 +21,13 @@ export function CommentThread({ contractId, principal, lineNumber, currentUserDi
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
 
-  const { data: allComments = [], isLoading, error } = useLineComments(
+  const { data, isLoading, error } = useLineComments(
     { principal, contractName: contractId },
     lineNumber
   );
+
+  const allComments = data?.comments || [];
+  const profiles = data?.profiles || {};
 
   const createCommentMutation = useCreateComment();
 
@@ -84,6 +85,7 @@ export function CommentThread({ contractId, principal, lineNumber, currentUserDi
               key={comment.uri}
               comment={comment}
               allComments={allComments}
+              profiles={profiles}
               currentUserDid={currentUserDid}
               onReply={(uri, cid, rkey) => setReplyTo({ uri, cid, rkey })}
               depth={0}
@@ -137,15 +139,15 @@ export function CommentThread({ contractId, principal, lineNumber, currentUserDi
 interface CommentCardProps {
   comment: Comment;
   allComments: Comment[];
+  profiles: Record<string, ProfileData>;
   currentUserDid?: string;
   onReply: (uri: string, cid: string, rkey: string) => void;
   depth: number;
 }
 
-function CommentCard({ comment, allComments, currentUserDid, onReply, depth }: CommentCardProps) {
-  const user = getUserByDid(comment.authorDid);
+function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, depth }: CommentCardProps) {
+  const profile = profiles[comment.authorDid];
   const replies = getRepliesFromComments(allComments, extractRkeyFromUri(comment.uri) || "");
-  const relationship = currentUserDid ? getRelationship(currentUserDid, comment.authorDid) : null;
   const isLiked = currentUserDid && comment.likedBy.includes(currentUserDid);
 
   const likeCommentMutation = useLikeComment();
@@ -165,23 +167,30 @@ function CommentCard({ comment, allComments, currentUserDid, onReply, depth }: C
     onReply(comment.uri, comment.cid, rkey);
   };
 
-  // Use placeholder if user not found (will come from AT Protocol profile later)
-  const displayUser: User = user || {
-    did: comment.authorDid,
-    handle: comment.authorDid.split(":").pop()?.slice(0, 8) || "unknown",
-    displayName: "AT Protocol User",
-    avatar: "",
-    reputation: 50,
-    badges: [],
-    followersCount: 0,
-    followingCount: 0,
-    commentsCount: 0,
-  };
+  // Build display info from profile or fallback
+  const displayName = profile?.displayName || profile?.handle || comment.authorDid.slice(-8);
+  const handle = profile?.handle || comment.authorDid.slice(-12);
+  const avatar = profile?.avatar;
 
   return (
     <div className={depth > 0 ? "ml-6 border-l-2 border-border pl-4" : ""}>
       <div className="space-y-2">
-        <UserHeader user={displayUser} relationship={relationship} timestamp={comment.createdAt} />
+        <div className="flex items-start gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={avatar} />
+            <AvatarFallback>{displayName?.[0] || "?"}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm text-foreground">{displayName}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>@{handle}</span>
+              <span>•</span>
+              <span>{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</span>
+            </div>
+          </div>
+        </div>
         <p className="text-sm text-foreground">{comment.text}</p>
         <div className="flex items-center gap-4 text-muted-foreground">
           <button
@@ -206,59 +215,13 @@ function CommentCard({ comment, allComments, currentUserDid, onReply, depth }: C
               key={reply.uri}
               comment={reply}
               allComments={allComments}
+              profiles={profiles}
               currentUserDid={currentUserDid}
               onReply={onReply}
               depth={depth + 1}
             />
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-interface UserHeaderProps {
-  user: User;
-  relationship: ReturnType<typeof getRelationship> | null;
-  timestamp: string;
-}
-
-function UserHeader({ user, relationship, timestamp }: UserHeaderProps) {
-  const reputationColor = user.reputation >= 80 ? "text-green-500" : user.reputation >= 50 ? "text-yellow-500" : "text-muted-foreground";
-
-  return (
-    <div className="flex items-start gap-3">
-      <Avatar className="h-8 w-8">
-        <AvatarImage src={user.avatar} />
-        <AvatarFallback>{user.displayName?.[0] || "?"}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-sm text-foreground">{user.displayName}</span>
-          {user.badges?.slice(0, 2).map((badge) => (
-            <span key={badge.id} title={badge.name} className="text-xs">
-              {badge.icon}
-            </span>
-          ))}
-          <span className={`text-xs font-medium ${reputationColor}`}>
-            {user.reputation}%
-          </span>
-          {relationship?.followedBy && (
-            <Badge variant="secondary" className="text-[10px] h-4">
-              <UserCheck className="h-2 w-2 mr-1" /> Follows you
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>@{user.handle}</span>
-          <span>•</span>
-          <span>{formatDistanceToNow(new Date(timestamp), { addSuffix: true })}</span>
-        </div>
-      </div>
-      {relationship && !relationship.following && (
-        <Button variant="outline" size="sm" className="h-7 text-xs">
-          <UserPlus className="h-3 w-3 mr-1" /> Follow
-        </Button>
       )}
     </div>
   );

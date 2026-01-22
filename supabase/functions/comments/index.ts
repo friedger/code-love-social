@@ -203,7 +203,39 @@ serve(async (req) => {
         throw new Error("Failed to fetch comments");
       }
 
-      return new Response(JSON.stringify({ comments: comments || [] }), {
+      // Fetch AT Protocol profiles for all unique authors
+      const authorDids = [...new Set((comments || []).map((c: { author_did: string }) => c.author_did))];
+      const profiles: Record<string, { did: string; handle: string; displayName?: string; avatar?: string }> = {};
+
+      // Batch fetch profiles in groups of 25 (AppView limit)
+      for (let i = 0; i < authorDids.length; i += 25) {
+        const batch = authorDids.slice(i, i + 25);
+        const params = new URLSearchParams();
+        batch.forEach((did) => params.append("actors", did));
+
+        try {
+          const profilesResponse = await fetch(
+            `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params.toString()}`
+          );
+
+          if (profilesResponse.ok) {
+            const data = await profilesResponse.json();
+            for (const profile of data.profiles) {
+              profiles[profile.did] = {
+                did: profile.did,
+                handle: profile.handle,
+                displayName: profile.displayName,
+                avatar: profile.avatar,
+              };
+            }
+          }
+        } catch (profileError) {
+          console.error("Failed to fetch profiles:", profileError);
+          // Continue without profiles - not fatal
+        }
+      }
+
+      return new Response(JSON.stringify({ comments: comments || [], profiles }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

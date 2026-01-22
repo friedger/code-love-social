@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Contract } from "@/data/dummyContracts";
 import { useComments } from "@/hooks/useComments";
-import { getUserByDid } from "@/data/dummyUsers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
@@ -18,10 +17,13 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
   const lines = contract.code.split("\n");
 
   // Fetch all comments for this contract
-  const { data: allComments = [] } = useComments({
+  const { data } = useComments({
     principal: contract.principal,
     contractName: contract.name,
   });
+
+  const allComments = data?.comments || [];
+  const profiles = data?.profiles || {};
 
   // Group comments by line number for display
   const getLineComments = (lineNum: number): Comment[] => {
@@ -60,12 +62,12 @@ export function ContractViewer({ contract, currentUserDid }: ContractViewerProps
                     {hasComments && (
                       <div className="flex -space-x-1">
                         {lineComments.slice(0, 2).map((c) => {
-                          const user = getUserByDid(c.authorDid);
+                          const profile = profiles[c.authorDid];
                           return (
                             <Avatar key={c.uri} className="h-4 w-4 border border-background">
-                              <AvatarImage src={user?.avatar} />
+                              <AvatarImage src={profile?.avatar} />
                               <AvatarFallback className="text-[8px]">
-                                {user?.displayName?.[0] || "?"}
+                                {profile?.displayName?.[0] || profile?.handle?.[0] || "?"}
                               </AvatarFallback>
                             </Avatar>
                           );
