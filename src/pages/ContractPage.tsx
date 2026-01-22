@@ -3,12 +3,12 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
 import { ContractViewer, type ContractViewerRef } from "@/components/ContractViewer";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { Loader2, ArrowLeft, AlertCircle, ExternalLink, SmilePlus, MessageSquare } from "lucide-react";
+import { Loader2, ArrowLeft, AlertCircle, SmilePlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
-import { ContractIdenticon } from "@/components/ContractIdenticon";
+import { ContractHeader } from "@/components/ContractHeader";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatContractId, getContractPath, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useContractReactions, useAddContractReaction } from "@/hooks/useContractReactions";
 import { toast } from "sonner";
 
@@ -99,96 +99,73 @@ const ContractPage = () => {
           </div>
         ) : contract ? (
           <>
-            <div className="mb-6 flex items-start justify-between gap-4">
-              {/* Left: Contract identity */}
-              <div className="flex items-start gap-3 min-w-0">
-                <ContractIdenticon 
-                  value={getContractPath(contract.principal, contract.name)} 
-                  size={48} 
-                  className="shrink-0 rounded" 
-                />
-                <div className="min-w-0">
-                  <h2 className="font-mono text-lg text-foreground truncate">
-                    {formatContractId(contract.principal, contract.name)}
-                  </h2>
-                  {contract.tx_id && (
-                    <a
-                      href={`https://explorer.stxer.xyz/txid/${contract.tx_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      <span>View on Explorer</span>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  )}
-                  {contract.description && (
-                    <p className="text-muted-foreground text-sm mt-1">{contract.description}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Reactions display + action buttons */}
-              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                {/* Show aggregated reactions */}
-                {reactionEntries.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    {reactionEntries.map(([emoji, count]) => (
-                      <button
-                        key={emoji}
-                        onClick={() => handleReaction(emoji)}
-                        disabled={addReactionMutation.isPending}
-                        className={cn(
-                          "inline-flex items-center gap-0.5 px-2 py-1 rounded text-sm transition-colors",
-                          reactions?.userReaction?.emoji === emoji
-                            ? "bg-primary/20 text-primary"
-                            : "bg-muted/50 hover:bg-muted"
-                        )}
-                      >
-                        <span>{emoji}</span>
-                        <span className="text-xs">{count}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <Popover open={reactionPopoverOpen} onOpenChange={setReactionPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5">
-                      <SmilePlus className="h-4 w-4" />
-                      <span className="hidden sm:inline">React</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-2" align="end">
-                    <div className="flex gap-1">
-                      {REACTION_EMOJIS.map((emoji) => (
+            <ContractHeader
+              principal={contract.principal}
+              contractName={contract.name}
+              txId={contract.tx_id}
+              description={contract.description}
+              actions={
+                <>
+                  {/* Show aggregated reactions */}
+                  {reactionEntries.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {reactionEntries.map(([emoji, count]) => (
                         <button
                           key={emoji}
-                          className={cn(
-                            "p-2 hover:bg-muted rounded text-xl transition-colors",
-                            reactions?.userReaction?.emoji === emoji && "bg-primary/20"
-                          )}
                           onClick={() => handleReaction(emoji)}
                           disabled={addReactionMutation.isPending}
+                          className={cn(
+                            "inline-flex items-center gap-0.5 px-2 py-1 rounded text-sm transition-colors",
+                            reactions?.userReaction?.emoji === emoji
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted/50 hover:bg-muted"
+                          )}
                         >
-                          {emoji}
+                          <span>{emoji}</span>
+                          <span className="text-xs">{count}</span>
                         </button>
                       ))}
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  )}
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={handleCommentClick}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="hidden sm:inline">Comment</span>
-                </Button>
-              </div>
-            </div>
+                  <Popover open={reactionPopoverOpen} onOpenChange={setReactionPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1.5">
+                        <SmilePlus className="h-4 w-4" />
+                        <span className="hidden sm:inline">React</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2" align="end">
+                      <div className="flex gap-1">
+                        {REACTION_EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            className={cn(
+                              "p-2 hover:bg-muted rounded text-xl transition-colors",
+                              reactions?.userReaction?.emoji === emoji && "bg-primary/20"
+                            )}
+                            onClick={() => handleReaction(emoji)}
+                            disabled={addReactionMutation.isPending}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={handleCommentClick}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="hidden sm:inline">Comment</span>
+                  </Button>
+                </>
+              }
+            />
             <ContractViewer
               ref={viewerRef}
               contract={contract}
