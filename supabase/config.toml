@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.chainhook-contracts]
 verify_jwt = false
+
+[functions.cleanup-sessions]
+verify_jwt = false
+
+[functions.atproto-auth]
+verify_jwt = false
