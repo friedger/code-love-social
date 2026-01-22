@@ -2,7 +2,10 @@ import { Contract } from "@/types/contract";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileCode, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, FileCode, Loader2, Link as LinkIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ContractSearchProps {
   contracts: Contract[];
@@ -42,36 +45,55 @@ export function ContractSearch({ contracts, isLoading, onSelect, selectedId, sea
             No contracts found
           </p>
         ) : (
-          contracts.map((contract) => (
-            <Card
-              key={contract.id}
-              className={`p-3 cursor-pointer transition-colors hover:bg-accent ${
-                selectedId === contract.id ? "bg-accent border-primary" : ""
-              }`}
-              onClick={() => onSelect(contract)}
-            >
-              <div className="flex items-start gap-3">
-                <FileCode className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-medium text-sm text-foreground truncate">
-                      {contract.name}
-                    </span>
-                    {contract.category && (
-                      <Badge variant="outline" className="text-[10px] shrink-0">
-                        {contract.category}
-                      </Badge>
+          contracts.map((contract) => {
+            const contractPath = `/contract/${contract.principal}.${contract.name}`;
+            return (
+              <Card
+                key={contract.id}
+                className={`p-3 cursor-pointer transition-colors hover:bg-accent group ${
+                  selectedId === contract.id ? "bg-accent border-primary" : ""
+                }`}
+                onClick={() => onSelect(contract)}
+              >
+                <div className="flex items-start gap-3">
+                  <FileCode className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-medium text-sm text-foreground truncate">
+                        {contract.name}
+                      </span>
+                      {contract.category && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">
+                          {contract.category}
+                        </Badge>
+                      )}
+                    </div>
+                    {contract.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                        {contract.description}
+                      </p>
                     )}
                   </div>
-                  {contract.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                      {contract.description}
-                    </p>
-                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                        asChild
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Link to={contractPath}>
+                          <LinkIcon className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Open contract page</TooltipContent>
+                  </Tooltip>
                 </div>
-              </div>
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
