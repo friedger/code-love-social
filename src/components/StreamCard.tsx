@@ -20,6 +20,7 @@ const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as 
 export function StreamCard({ comment, profile }: StreamCardProps) {
   const contractPath = getContractPath(comment.subject.principal, comment.subject.contractName);
   const txId = comment.subject.txId;
+  const sourceHash = comment.subject.sourceHash;
   const isReply = !!comment.parentId;
   const reactions = comment.reactions || {};
 
@@ -40,7 +41,7 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <ContractIdenticon value={contractPath} size={20} className="shrink-0 rounded-sm" />
+              <ContractIdenticon value={sourceHash || contractPath} size={20} className="shrink-0 rounded-sm" />
               <Link
                 to={getContractLink()}
                 className="font-mono text-sm text-muted-foreground hover:text-foreground transition-colors truncate"

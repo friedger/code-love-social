@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Heart, MessageCircle, X, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, X, Loader2, Link2, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import type { Comment } from "@/lexicon/types";
@@ -21,6 +21,15 @@ interface CommentThreadProps {
 export function CommentThread({ contractId, principal, txId, lineNumber, currentUserDid, onClose }: CommentThreadProps) {
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/contract/${principal}.${contractId}?line=${lineNumber}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success("Link copied to clipboard!");
+  };
 
   const { data, isLoading, error } = useLineComments(
     { principal, contractName: contractId, txId },
@@ -61,7 +70,22 @@ export function CommentThread({ contractId, principal, txId, lineNumber, current
   return (
     <Card className="p-4 sticky top-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Line {lineNumber} Comments</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-foreground">Line {lineNumber}</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleCopyLink} 
+            className="h-6 w-6 p-0"
+            title="Copy link to this line"
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Link2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>

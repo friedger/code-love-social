@@ -6,6 +6,7 @@ interface ContractHeaderProps {
   principal: string;
   contractName: string;
   txId?: string | null;
+  sourceHash?: string | null;
   description?: string | null;
   actions?: React.ReactNode;
 }
@@ -14,6 +15,7 @@ export function ContractHeader({
   principal,
   contractName,
   txId,
+  sourceHash,
   description,
   actions,
 }: ContractHeaderProps) {
@@ -22,7 +24,7 @@ export function ContractHeader({
       {/* Left: Contract identity */}
       <div className="flex items-start gap-3 min-w-0">
         <ContractIdenticon 
-          value={getContractPath(principal, contractName)} 
+          value={sourceHash || getContractPath(principal, contractName)} 
           size={48} 
           className="shrink-0 rounded" 
         />

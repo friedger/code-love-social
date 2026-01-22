@@ -103,6 +103,7 @@ const ContractPage = () => {
               principal={contract.principal}
               contractName={contract.name}
               txId={contract.tx_id}
+              sourceHash={contract.source_hash}
               description={contract.description}
               actions={
                 <>

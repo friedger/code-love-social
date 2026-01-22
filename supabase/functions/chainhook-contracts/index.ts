@@ -1,5 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as encodeHex } from "https://deno.land/std@0.168.0/encoding/hex.ts";
+
+/**
+ * Compute SHA-256 hash of source code for identicon generation
+ */
+async function computeSourceHash(sourceCode: string): Promise<string> {
+  const data = new TextEncoder().encode(sourceCode);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = new Uint8Array(hashBuffer);
+  const hexBytes = encodeHex(hashArray);
+  return new TextDecoder().decode(hexBytes);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,10 +103,14 @@ serve(async (req) => {
         
         console.log(`Applying contract: ${contractIdentifier} (tx: ${txId})`);
         
+        // Compute source hash for identicon generation
+        const sourceHash = await computeSourceHash(sourceCode);
+        
         const { error } = await supabase.from("contracts").upsert({
           principal,
           name,
           source_code: sourceCode,
+          source_hash: sourceHash,
           tx_id: txId,
           deployed_at: block.timestamp 
             ? new Date(block.timestamp * 1000).toISOString() 

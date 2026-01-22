@@ -8,6 +8,7 @@ interface ContractListItemProps {
   principal: string;
   contractName: string;
   txId?: string;
+  sourceHash?: string;
   category?: string;
   description?: string;
   showDescription?: boolean;
@@ -20,6 +21,7 @@ export function ContractListItem({
   principal,
   contractName,
   txId,
+  sourceHash,
   category,
   description,
   showDescription = false,
@@ -33,7 +35,7 @@ export function ContractListItem({
   const content = (
     <div className="flex items-start gap-3">
       <ContractIdenticon
-        value={contractPath}
+        value={sourceHash || contractPath}
         size={identiconSize}
         className="shrink-0 rounded-sm"
       />
