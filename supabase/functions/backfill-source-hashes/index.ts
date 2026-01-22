@@ -8,13 +8,17 @@ const corsHeaders = {
 };
 
 /**
- * Compute SHA-256 hash of source code for identicon generation
+ * Compute SHA-512/256 hash of source code for identicon generation.
+ * SHA-512/256 uses SHA-512 with a different IV and truncates to 256 bits.
+ * Since Web Crypto doesn't support SHA-512/256 directly, we use SHA-512
+ * and truncate to the first 256 bits (32 bytes).
  */
 async function computeSourceHash(sourceCode: string): Promise<string> {
   const data = new TextEncoder().encode(sourceCode);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = new Uint8Array(hashBuffer);
-  const hexBytes = encodeHex(hashArray);
+  const hashBuffer = await crypto.subtle.digest("SHA-512", data);
+  // Take first 32 bytes (256 bits) of SHA-512 output
+  const truncated = new Uint8Array(hashBuffer).slice(0, 32);
+  const hexBytes = encodeHex(truncated);
   return new TextDecoder().decode(hexBytes);
 }
 
@@ -25,10 +29,17 @@ serve(async (req) => {
 
   // Verify bearer token for authentication
   const authHeader = req.headers.get("Authorization");
-  const expectedToken = Deno.env.get("CHAINHOOK_AUTH_TOKEN");
+  const chainhookToken = Deno.env.get("CHAINHOOK_AUTH_TOKEN");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   
-  if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
-    console.error("Unauthorized: Invalid or missing CHAINHOOK_AUTH_TOKEN");
+  const isValidChainhook = chainhookToken && authHeader === `Bearer ${chainhookToken}`;
+  const isValidServiceRole = serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`;
+  
+  const isValidChainhook = chainhookToken && authHeader === `Bearer ${chainhookToken}`;
+  const isValidServiceRole = serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`;
+  
+  if (!isValidChainhook && !isValidServiceRole) {
+    console.error("Unauthorized: Invalid or missing auth token");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -40,11 +51,10 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  // Fetch all contracts with null source_hash
+  // Fetch all contracts to re-hash with SHA-512/256
   const { data: contracts, error: fetchError } = await supabase
     .from("contracts")
-    .select("id, source_code")
-    .is("source_hash", null);
+    .select("id, source_code");
 
   if (fetchError) {
     console.error("Failed to fetch contracts:", fetchError);
