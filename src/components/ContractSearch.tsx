@@ -65,6 +65,7 @@ export function ContractSearch({ contracts, isLoading, isFetching, onSelect, sel
                     <ContractListItem
                       principal={contract.principal}
                       contractName={contract.name}
+                      sourceHash={contract.source_hash || undefined}
                       category={contract.category || undefined}
                       description={contract.description || undefined}
                       showDescription
