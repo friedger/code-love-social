@@ -173,34 +173,49 @@ serve(async (req) => {
 
   try {
     // ============== GET /comments ==============
-    // List comments for a contract
+    // List comments for a contract, by author, or all (stream)
     if (req.method === "GET" && pathParts.length === 1 && pathParts[0] === "comments") {
       const principal = url.searchParams.get("principal");
       const contractName = url.searchParams.get("contractName");
       const lineNumber = url.searchParams.get("lineNumber");
       const txId = url.searchParams.get("txId");
+      const authorDid = url.searchParams.get("authorDid");
+      const stream = url.searchParams.get("stream");
+      const limit = parseInt(url.searchParams.get("limit") || "50", 10);
 
-      if (!principal || !contractName) {
-        return new Response(
-          JSON.stringify({ error: "Missing principal or contractName" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Query local index
       let query = supabase
         .from("comments_index")
         .select("*")
-        .eq("principal", principal)
-        .eq("contract_name", contractName)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .limit(Math.min(limit, 100));
 
-      if (lineNumber) {
-        query = query.eq("line_number", parseInt(lineNumber, 10));
+      // Stream mode - get all recent comments
+      if (stream === "true") {
+        // No additional filters, just get latest
       }
+      // Author mode - get comments by specific user
+      else if (authorDid) {
+        query = query.eq("author_did", authorDid);
+      }
+      // Contract mode - get comments for specific contract
+      else if (principal && contractName) {
+        query = query
+          .eq("principal", principal)
+          .eq("contract_name", contractName)
+          .order("created_at", { ascending: true });
 
-      if (txId) {
-        query = query.eq("tx_id", txId);
+        if (lineNumber) {
+          query = query.eq("line_number", parseInt(lineNumber, 10));
+        }
+
+        if (txId) {
+          query = query.eq("tx_id", txId);
+        }
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Missing required parameters: provide principal+contractName, authorDid, or stream=true" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       const { data: comments, error: queryError } = await query;

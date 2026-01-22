@@ -162,6 +162,52 @@ export async function getComments(
 }
 
 /**
+ * Fetch comments by author DID
+ */
+export async function getCommentsByAuthor(authorDid: string): Promise<CommentsWithProfiles> {
+  const params = new URLSearchParams({ authorDid });
+
+  const response = await fetch(`${COMMENTS_URL}?${params.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch comments");
+  }
+
+  const data: CommentsResponse = await response.json();
+  return {
+    comments: data.comments.map((row) => indexRowToComment(row)),
+    profiles: data.profiles || {},
+  };
+}
+
+/**
+ * Fetch recent comments stream
+ */
+export async function getCommentsStream(limit = 50): Promise<CommentsWithProfiles> {
+  const params = new URLSearchParams({ stream: "true", limit: limit.toString() });
+
+  const response = await fetch(`${COMMENTS_URL}?${params.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch comments");
+  }
+
+  const data: CommentsResponse = await response.json();
+  return {
+    comments: data.comments.map((row) => indexRowToComment(row)),
+    profiles: data.profiles || {},
+  };
+}
+
+/**
  * Create a new comment
  */
 export async function createComment(params: CreateCommentParams): Promise<CreateCommentResponse> {
