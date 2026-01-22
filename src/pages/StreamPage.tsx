@@ -5,7 +5,7 @@ import { getCommentsStream, searchComments } from "@/lib/comments-api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Search, Rss, AlertTriangle, Loader2 } from "lucide-react";
+import { MessageSquare, Search, AlertTriangle, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { StreamCard } from "@/components/StreamCard";
 import { ContractMatchCard } from "@/components/ContractMatchCard";
@@ -108,26 +108,12 @@ const StreamPage = () => {
           </div>
         )}
 
-        {/* Stream/Search header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-lg bg-primary/10">
-            {isSearching ? (
-              <Search className="h-5 w-5 text-primary" />
-            ) : (
-              <Rss className="h-5 w-5 text-primary" />
-            )}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              {isSearching ? "Search Results" : "Activity Stream"}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {isSearching
-                ? `${comments?.length || 0} comments matching "${debouncedSearch}"`
-                : "Latest comments across all contracts"}
-            </p>
-          </div>
-        </div>
+        {/* Search result count (only when searching) */}
+        {isSearching && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {comments?.length || 0} results for "{debouncedSearch}"
+          </p>
+        )}
 
         {/* Comments stream/results */}
         {isLoading ? (
