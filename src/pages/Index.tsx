@@ -28,8 +28,8 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <FileCode className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="font-bold text-lg text-foreground">Clarity Social</h1>
-              <p className="text-xs text-muted-foreground">Discuss smart contracts on AT Protocol</p>
+              <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
+              <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
             </div>
           </div>
           <AuthButton
