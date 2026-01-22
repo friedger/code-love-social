@@ -2,3 +2,6 @@ project_id = "uxaxgrdxikvligkjyyxz"
 
 [functions.comments]
 verify_jwt = false
+
+[functions.chainhook-contracts]
+verify_jwt = false
