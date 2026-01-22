@@ -11,22 +11,20 @@ These Chainhook v2 predicates automatically sync all Clarity smart contract depl
 
 ## Register Chainhooks via API
 
-### Mainnet
+The `docs/chainhooks.json` file contains both mainnet and testnet predicates. Register each one separately:
 
 ```bash
-curl -X POST https://api.hiro.so/chainhooks/v1/me/ \
+# Extract and register mainnet predicate
+jq '.[0]' docs/chainhooks.json | curl -X POST https://api.hiro.so/chainhooks/v1/me/ \
   -H "x-api-key: YOUR_HIRO_API_KEY" \
   -H "content-type: application/json" \
-  -d @docs/chainhook-mainnet.json
-```
+  -d @-
 
-### Testnet
-
-```bash
-curl -X POST https://api.hiro.so/chainhooks/v1/me/ \
+# Extract and register testnet predicate
+jq '.[1]' docs/chainhooks.json | curl -X POST https://api.hiro.so/chainhooks/v1/me/ \
   -H "x-api-key: YOUR_HIRO_API_KEY" \
   -H "content-type: application/json" \
-  -d @docs/chainhook-testnet.json
+  -d @-
 ```
 
 ## Configure Webhook Authentication
