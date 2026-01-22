@@ -36,15 +36,15 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
 
   return (
     <Card className="hover:bg-accent/30 transition-colors">
-      <CardContent className="p-4">
-        {/* Header: Contract info on left, Author on right */}
-        <div className="flex items-start justify-between gap-4 mb-3">
+      <CardContent className="p-3 sm:p-4">
+        {/* Header: Contract info on left, Author on right - stacks on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <ContractIdenticon value={sourceHash || contractPath} size={20} className="shrink-0 rounded-sm" />
               <Link
                 to={getContractLink()}
-                className="font-mono text-sm text-muted-foreground hover:text-foreground transition-colors truncate"
+                className="font-mono text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors break-all"
               >
                 {formatContractId(comment.subject.principal, comment.subject.contractName)}
               </Link>
@@ -73,10 +73,18 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="text-right">
+            <Link to={`/profile/${profile?.handle || comment.authorDid}`}>
+              <Avatar className="h-7 w-7 sm:h-8 sm:w-8 hover:ring-2 hover:ring-primary transition-all">
+                <AvatarImage src={profile?.avatar} alt={profile?.displayName || profile?.handle} />
+                <AvatarFallback className="text-xs">
+                  {(profile?.displayName || profile?.handle || "?")[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+            <div className="text-left sm:text-right">
               <Link
                 to={`/profile/${profile?.handle || comment.authorDid}`}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 @{profile?.handle || comment.authorDid.slice(0, 15)}
               </Link>
@@ -84,14 +92,6 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
               </div>
             </div>
-            <Link to={`/profile/${profile?.handle || comment.authorDid}`}>
-              <Avatar className="h-8 w-8 hover:ring-2 hover:ring-primary transition-all">
-                <AvatarImage src={profile?.avatar} alt={profile?.displayName || profile?.handle} />
-                <AvatarFallback className="text-xs">
-                  {(profile?.displayName || profile?.handle || "?")[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </Link>
           </div>
         </div>
 

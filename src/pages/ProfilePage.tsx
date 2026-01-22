@@ -56,44 +56,44 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-background">
       <PageHeader />
 
-      <main className="container mx-auto px-4 py-6 max-w-3xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Link>
         </Button>
 
         {/* Profile header */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-4 sm:p-6">
             {isLoading && !displayProfile ? (
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Skeleton className="h-12 w-12 sm:h-16 sm:w-16 rounded-full" />
                 <div>
-                  <Skeleton className="h-6 w-40 mb-2" />
-                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-5 sm:h-6 w-32 sm:w-40 mb-2" />
+                  <Skeleton className="h-4 w-24 sm:w-32" />
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-16 w-16">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                  <Avatar className="h-12 w-12 sm:h-16 sm:w-16 shrink-0">
                     <AvatarImage
                       src={displayProfile?.avatar}
                       alt={displayProfile?.displayName || displayProfile?.handle}
                     />
-                    <AvatarFallback className="text-lg">
+                    <AvatarFallback className="text-base sm:text-lg">
                       {(displayProfile?.displayName || displayProfile?.handle || "?")[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h2 className="text-xl font-bold text-foreground">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="min-w-0">
+                        <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
                           {displayProfile?.displayName || displayProfile?.handle || "Unknown User"}
                         </h2>
-                        <p className="text-muted-foreground">
+                        <p className="text-muted-foreground text-sm sm:text-base break-all">
                           @{displayProfile?.handle || did?.slice(0, 20)}
                         </p>
                       </div>

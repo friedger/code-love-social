@@ -16,9 +16,10 @@ interface CommentThreadProps {
   lineNumber: number;
   currentUserDid?: string;
   onClose: () => void;
+  isInDrawer?: boolean;
 }
 
-export function CommentThread({ contractId, principal, txId, lineNumber, currentUserDid, onClose }: CommentThreadProps) {
+export function CommentThread({ contractId, principal, txId, lineNumber, currentUserDid, onClose, isInDrawer = false }: CommentThreadProps) {
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
   const [copied, setCopied] = useState(false);
@@ -67,29 +68,32 @@ export function CommentThread({ contractId, principal, txId, lineNumber, current
     }
   };
 
-  return (
-    <Card className="p-4 sticky top-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-foreground">Line {lineNumber}</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleCopyLink} 
-            className="h-6 w-6 p-0"
-            title="Copy link to this line"
-          >
-            {copied ? (
-              <Check className="h-3.5 w-3.5 text-green-500" />
-            ) : (
-              <Link2 className="h-3.5 w-3.5" />
-            )}
+  // When rendered inside a Drawer, skip the Card wrapper
+  const content = (
+    <>
+      {!isInDrawer && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground">Line {lineNumber}</h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleCopyLink} 
+              className="h-6 w-6 p-0"
+              title="Copy link to this line"
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-green-500" />
+              ) : (
+                <Link2 className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
           </Button>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      )}
 
       <div className="space-y-4 max-h-[60vh] overflow-y-auto">
         {isLoading ? (
@@ -157,6 +161,16 @@ export function CommentThread({ contractId, principal, txId, lineNumber, current
           </Button>
         </div>
       </div>
+    </>
+  );
+
+  if (isInDrawer) {
+    return content;
+  }
+
+  return (
+    <Card className="p-4 sticky top-4">
+      {content}
     </Card>
   );
 }

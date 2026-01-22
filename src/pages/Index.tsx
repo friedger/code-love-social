@@ -47,15 +47,15 @@ const Index = () => {
 
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Source of Clarity" className="h-8 w-8" />
-            <div>
+        <div className="container mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img src={logo} alt="Source of Clarity" className="h-7 w-7 sm:h-8 sm:w-8" />
+            <div className="hidden sm:block">
               <h1 className="font-bold text-lg text-foreground">Source of Clarity</h1>
               <p className="text-xs text-muted-foreground">Discuss smart contracts on the Stacks blockchain.</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button variant="ghost" size="sm" asChild>
               <Link to="/" className="gap-1.5">
                 <Home className="h-4 w-4" />
@@ -73,10 +73,10 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* Sidebar */}
-          <aside className="w-80 shrink-0">
+          <aside className="w-full lg:w-80 lg:shrink-0">
             <ContractSearch
               contracts={contracts ?? []}
               isLoading={isLoading && !contracts}
@@ -96,7 +96,7 @@ const Index = () => {
               </div>
             )}
             {isLoading && !contracts ? (
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
+              <div className="flex items-center justify-center h-48 lg:h-96 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 Loading contracts...
               </div>
@@ -112,7 +112,7 @@ const Index = () => {
                 <ContractViewer contract={selectedContract} currentUserDid={user?.did} />
               </>
             ) : (
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
+              <div className="flex items-center justify-center h-48 lg:h-96 text-muted-foreground text-center px-4">
                 {contracts && contracts.length === 0
                   ? "No contracts found"
                   : "Select a contract to view"}

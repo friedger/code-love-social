@@ -2,12 +2,14 @@ import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle }
 import { Contract } from "@/types/contract";
 import { useComments } from "@/hooks/useComments";
 import { useClarityHighlighter } from "@/hooks/useClarityHighlighter";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { CommentThread } from "./CommentThread";
 import { ContractComments, type ContractCommentsRef } from "./ContractComments";
 import { HighlightedCodeLine } from "./HighlightedCodeLine";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import type { Comment } from "@/lexicon/types";
 
 interface ContractViewerProps {
@@ -31,6 +33,7 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
   const [selectedLine, setSelectedLine] = useState<number | null>(
     initialSelectedLine ?? initialLineRange?.start ?? null
   );
+  const isMobile = useIsMobile();
   
   const contractCommentsRef = useRef<ContractCommentsRef>(null);
   
@@ -89,19 +92,19 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
-        <div className="flex-1 bg-card rounded-lg border overflow-hidden">
-          <div className="bg-muted px-4 py-2 border-b flex items-center justify-between">
-            <div>
-              <h2 className="font-mono font-semibold text-foreground">{contract.name}.clar</h2>
-              <p className="text-xs text-muted-foreground">{contract.principal}</p>
+      <div className="flex flex-col xl:flex-row gap-4">
+        <div className="flex-1 bg-card rounded-lg border overflow-hidden min-w-0">
+          <div className="bg-muted px-3 sm:px-4 py-2 border-b flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="font-mono font-semibold text-foreground text-sm sm:text-base truncate">{contract.name}.clar</h2>
+              <p className="text-xs text-muted-foreground truncate">{contract.principal}</p>
             </div>
             {contract.category && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{contract.category}</span>
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded shrink-0">{contract.category}</span>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <pre className="text-sm">
+          <div className="overflow-x-auto -webkit-overflow-scrolling-touch">
+            <pre className="text-xs sm:text-sm min-w-max">
               {lines.map((line, idx) => {
                 const lineNum = idx + 1;
                 const lineComments = getLineComments(lineNum);
@@ -117,8 +120,8 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
                     } ${hasComments ? "bg-accent/20" : ""}`}
                     onClick={() => setSelectedLine(isSelected ? null : lineNum)}
                   >
-                    {/* Avatar column - fixed width */}
-                    <span className="w-8 shrink-0 flex items-center justify-center">
+                    {/* Avatar column - fixed width, hidden on mobile */}
+                    <span className="hidden sm:flex w-8 shrink-0 items-center justify-center">
                       {hasComments && (
                         <div className="flex -space-x-1">
                           {lineComments.slice(0, 2).map((c) => {
@@ -137,22 +140,28 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
                     </span>
                     {/* Line number column - fixed width based on max digits */}
                     <span 
-                      className="shrink-0 text-right pr-3 pl-1 text-muted-foreground select-none border-r border-border tabular-nums"
+                      className="shrink-0 text-right pr-2 sm:pr-3 pl-1 text-muted-foreground select-none border-r border-border tabular-nums"
                       style={{ width: `${Math.max(2, String(lines.length).length) + 1}ch` }}
                     >
                       {lineNum}
                     </span>
-                    <code className="flex-1 px-4 py-0.5 whitespace-pre font-mono">
+                    <code className="flex-1 px-2 sm:px-4 py-0.5 whitespace-pre font-mono">
                       {isReady && highlightedLines[idx] ? (
                         <HighlightedCodeLine tokens={highlightedLines[idx].tokens} />
                       ) : (
                         <span className="text-foreground">{line}</span>
                       )}
                     </code>
+                    {/* Comment indicator for mobile */}
+                    {hasComments && (
+                      <span className="sm:hidden px-1 flex items-center">
+                        <MessageCircle className="h-3 w-3 text-primary" />
+                      </span>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="opacity-0 group-hover:opacity-100 h-6 px-2"
+                      className="opacity-0 group-hover:opacity-100 h-6 px-2 hidden sm:flex"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedLine(lineNum);
@@ -167,8 +176,9 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
           </div>
         </div>
 
-        {selectedLine && (
-          <div className="w-96 shrink-0">
+        {/* Comment thread - Drawer on mobile, side panel on desktop */}
+        {selectedLine && !isMobile && (
+          <div className="w-96 shrink-0 hidden xl:block">
             <CommentThread
               contractId={contract.name}
               principal={contract.principal}
@@ -180,6 +190,30 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
           </div>
         )}
       </div>
+
+      {/* Mobile drawer for comments */}
+      {isMobile && (
+        <Drawer open={!!selectedLine} onOpenChange={(open) => !open && setSelectedLine(null)}>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader className="pb-0">
+              <DrawerTitle>Line {selectedLine}</DrawerTitle>
+            </DrawerHeader>
+            {selectedLine && (
+              <div className="px-4 pb-4 overflow-y-auto">
+                <CommentThread
+                  contractId={contract.name}
+                  principal={contract.principal}
+                  txId={contract.tx_id || ""}
+                  lineNumber={selectedLine}
+                  currentUserDid={currentUserDid}
+                  onClose={() => setSelectedLine(null)}
+                  isInDrawer
+                />
+              </div>
+            )}
+          </DrawerContent>
+        </Drawer>
+      )}
 
       {/* Contract-level comments section */}
       <div id="contract-comments-section">
