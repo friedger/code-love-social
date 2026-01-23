@@ -6,7 +6,7 @@
   "redirect_uris": [
     "https://id-preview--1b195c5a-8f47-408d-a1ce-3f2eea104bbf.lovable.app/oauth/callback"
   ],
-  "scope": "atproto repo:com.source-of-clarity.temp.comment?action=create&action=delete repo:com.source-of-clarity.temp.reaction?action=create&action=delete repo:app.bsky.graph.follow?action=create&action=delete",
+  "scope": "atproto repo:com.source-of-clarity.temp.comment repo:com.source-of-clarity.temp.reaction repo:app.bsky.graph.follow",
   "grant_types": ["authorization_code", "refresh_token"],
   "response_types": ["code"],
   "token_endpoint_auth_method": "none",
