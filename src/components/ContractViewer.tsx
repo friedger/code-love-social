@@ -179,7 +179,7 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
 
         {/* Comment thread - Side panel only on XL desktop */}
         {selectedLine && isDesktopXL && (
-          <div className="w-96 shrink-0">
+          <div className="w-96 shrink-0 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto">
             <CommentThread
               contractId={contract.name}
               principal={contract.principal}
