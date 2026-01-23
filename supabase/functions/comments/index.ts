@@ -231,6 +231,47 @@ serve(async (req) => {
         throw new Error("Failed to fetch comments");
       }
 
+      // Fetch reaction counts for all comments
+      const commentUris = (comments || []).map((c: { uri: string }) => c.uri);
+      let reactionsByComment: Record<string, { counts: Record<string, number>; userReaction?: { emoji: string; uri: string } }> = {};
+      
+      if (commentUris.length > 0) {
+        const { data: reactionsData } = await supabase
+          .from("likes_index")
+          .select("*")
+          .in("subject_uri", commentUris);
+        
+        // Aggregate reactions by comment URI
+        for (const reaction of reactionsData || []) {
+          if (!reactionsByComment[reaction.subject_uri]) {
+            reactionsByComment[reaction.subject_uri] = { counts: {} };
+          }
+          const emoji = reaction.emoji || "👍";
+          reactionsByComment[reaction.subject_uri].counts[emoji] = 
+            (reactionsByComment[reaction.subject_uri].counts[emoji] || 0) + 1;
+        }
+        
+        // Check for current user's reactions if authenticated
+        const authHeader = req.headers.get("Authorization");
+        const sessionToken = authHeader?.replace("Bearer ", "");
+        
+        if (sessionToken) {
+          try {
+            const { session } = await getValidSession(sessionToken);
+            for (const reaction of reactionsData || []) {
+              if (reaction.author_did === session.did && reactionsByComment[reaction.subject_uri]) {
+                reactionsByComment[reaction.subject_uri].userReaction = {
+                  emoji: reaction.emoji || "👍",
+                  uri: reaction.uri,
+                };
+              }
+            }
+          } catch {
+            // Ignore auth errors - just don't include user reactions
+          }
+        }
+      }
+
       // Fetch AT Protocol profiles for all unique authors
       const authorDids = [...new Set((comments || []).map((c: { author_did: string }) => c.author_did))];
       const profiles: Record<string, { did: string; handle: string; displayName?: string; avatar?: string }> = {};
@@ -263,7 +304,7 @@ serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ comments: comments || [], profiles }), {
+      return new Response(JSON.stringify({ comments: comments || [], profiles, reactionsByComment }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -10,10 +10,12 @@ import { PageHeader } from "@/components/PageHeader";
 import { StreamCard } from "@/components/StreamCard";
 import { ContractMatchCard } from "@/components/ContractMatchCard";
 import { getContractPath } from "@/lib/utils";
+import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
 
 const StreamPage = () => {
   const [inputValue, setInputValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const { user } = useAtprotoAuth();
 
   // Debounce search input
   useEffect(() => {
@@ -174,6 +176,7 @@ const StreamPage = () => {
                 key={comment.uri}
                 comment={comment}
                 profile={profiles?.[comment.authorDid]}
+                currentUserDid={user?.did}
               />
             ))}
           </div>

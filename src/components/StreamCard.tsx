@@ -2,27 +2,45 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ExternalLink, MessageSquare, SmilePlus } from "lucide-react";
+import { ExternalLink, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { Comment, KNOWN_REACTIONS } from "@/lexicon/types";
+import { toast } from "sonner";
+import type { Comment } from "@/lexicon/types";
 import type { ProfileData } from "@/lib/comments-api";
 import { ContractIdenticon } from "./ContractIdenticon";
 import { formatContractId, getContractPath, getExplorerContractUrl } from "@/lib/utils";
+import { ReactionPicker } from "./ReactionPicker";
+import { useToggleCommentReaction } from "@/hooks/useCommentReactions";
 
 interface StreamCardProps {
   comment: Comment;
   profile?: ProfileData;
+  currentUserDid?: string;
 }
 
-const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as const;
-
-export function StreamCard({ comment, profile }: StreamCardProps) {
+export function StreamCard({ comment, profile, currentUserDid }: StreamCardProps) {
   const contractPath = getContractPath(comment.subject.principal, comment.subject.contractName);
-  const txId = comment.subject.txId;
   const sourceHash = comment.subject.sourceHash;
   const isReply = !!comment.parentId;
   const reactions = comment.reactions || {};
+  const userReaction = comment.userReaction;
+
+  const toggleReactionMutation = useToggleCommentReaction();
+
+  const handleReaction = (emoji: string) => {
+    if (!currentUserDid) {
+      toast.error("Sign in to react");
+      return;
+    }
+
+    toggleReactionMutation.mutate({
+      uri: comment.uri,
+      cid: comment.cid,
+      emoji,
+      currentUserReactionUri: userReaction?.uri,
+      currentUserEmoji: userReaction?.emoji,
+    });
+  };
 
   const getContractLink = () => {
     let url = `/contract/${contractPath}`;
@@ -106,40 +124,12 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
 
         {/* Footer: Reactions and Reply */}
         <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/50">
-          {/* Reaction counts */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {Object.entries(reactions).map(([emoji, count]) => (
-              <span
-                key={emoji}
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs bg-muted/50"
-              >
-                <span>{emoji}</span>
-                <span className="text-muted-foreground">{count}</span>
-              </span>
-            ))}
-          </div>
-
-          {/* Add reaction button */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
-                <SmilePlus className="h-3.5 w-3.5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2" align="start">
-              <div className="flex gap-1">
-                {REACTION_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    className="p-1.5 hover:bg-muted rounded text-lg"
-                    onClick={() => {/* TODO: Call addReaction */}}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <ReactionPicker
+            reactions={reactions}
+            userReaction={userReaction}
+            onReact={handleReaction}
+            disabled={!currentUserDid || toggleReactionMutation.isPending}
+          />
 
           <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" asChild>
             <Link to={getContractLink()}>
