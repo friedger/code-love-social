@@ -37,3 +37,22 @@ export function formatContractIdShort(principal: string, contractName: string): 
 export function getContractPath(principal: string, contractName: string): string {
   return `${principal}.${contractName}`;
 }
+
+/**
+ * Determine if a Stacks address is on testnet
+ * Testnet addresses start with "ST" or "SN"
+ */
+export function isTestnetAddress(address: string): boolean {
+  return address.startsWith("ST") || address.startsWith("SN");
+}
+
+/**
+ * Get the explorer URL for a contract based on the network
+ */
+export function getExplorerContractUrl(principal: string, contractName: string): string {
+  const contractId = `${principal}.${contractName}`;
+  if (isTestnetAddress(principal)) {
+    return `https://explorer.hiro.so/txid/${contractId}?chain=testnet`;
+  }
+  return `https://explorer.stxer.xyz/txid/${contractId}`;
+}
