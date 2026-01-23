@@ -192,13 +192,12 @@ async function getAuthServerMetadata(authServerUrl: string): Promise<{
 }
 
 // Granular OAuth scopes for Source of Clarity lexicons only
-// This restricts permissions to only our custom lexicon actions
-// Format per AT Protocol spec: repeated &action= params for multiple actions
+// Full permissions on our custom lexicon collections
 const OAUTH_SCOPES = [
   "atproto",
-  "repo:com.source-of-clarity.temp.comment?action=create&action=delete",
-  "repo:com.source-of-clarity.temp.reaction?action=create&action=delete",
-  "repo:app.bsky.graph.follow?action=create&action=delete",
+  "repo:com.source-of-clarity.temp.comment",
+  "repo:com.source-of-clarity.temp.reaction",
+  "repo:app.bsky.graph.follow",
 ].join(" ");
 
 // Get the client metadata (this function's URL serves as client_id)
