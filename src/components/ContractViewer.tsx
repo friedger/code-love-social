@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle }
 import { Contract } from "@/types/contract";
 import { useComments } from "@/hooks/useComments";
 import { useClarityHighlighter } from "@/hooks/useClarityHighlighter";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsDesktopXL } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
@@ -34,6 +34,7 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
     initialSelectedLine ?? initialLineRange?.start ?? null
   );
   const isMobile = useIsMobile();
+  const isDesktopXL = useIsDesktopXL();
   
   const contractCommentsRef = useRef<ContractCommentsRef>(null);
   
@@ -176,9 +177,9 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
           </div>
         </div>
 
-        {/* Comment thread - Drawer on mobile, side panel on desktop */}
-        {selectedLine && !isMobile && (
-          <div className="w-96 shrink-0 hidden xl:block">
+        {/* Comment thread - Side panel only on XL desktop */}
+        {selectedLine && isDesktopXL && (
+          <div className="w-96 shrink-0">
             <CommentThread
               contractId={contract.name}
               principal={contract.principal}
@@ -191,8 +192,8 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
         )}
       </div>
 
-      {/* Mobile drawer for comments */}
-      {isMobile && (
+      {/* Drawer for comments on mobile and medium devices */}
+      {!isDesktopXL && (
         <Drawer open={!!selectedLine} onOpenChange={(open) => !open && setSelectedLine(null)}>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader className="pb-0">
