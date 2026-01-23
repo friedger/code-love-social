@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useLineComments, useCreateComment, useLikeComment, getRepliesFromComments, getRootComments, ProfileData } from "@/hooks/useComments";
+import { useLineComments, useCreateComment, getRepliesFromComments, getRootComments, ProfileData } from "@/hooks/useComments";
+import { useToggleCommentReaction } from "@/hooks/useCommentReactions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Heart, MessageCircle, X, Loader2, Link2, Check } from "lucide-react";
+import { MessageCircle, X, Loader2, Link2, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import type { Comment } from "@/lexicon/types";
+import { ReactionPicker } from "./ReactionPicker";
 
 interface CommentThreadProps {
   contractId: string;
@@ -187,19 +189,24 @@ interface CommentCardProps {
 function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, depth }: CommentCardProps) {
   const profile = profiles[comment.authorDid];
   const replies = getRepliesFromComments(allComments, extractRkeyFromUri(comment.uri) || "");
+  const reactions = comment.reactions || {};
   const userReaction = comment.userReaction;
-  const totalReactions = Object.values(comment.reactions || {}).reduce((a, b) => a + b, 0);
 
-  const likeCommentMutation = useLikeComment();
+  const toggleReactionMutation = useToggleCommentReaction();
 
-  const handleLike = async () => {
-    if (!currentUserDid) return;
-
-    try {
-      await likeCommentMutation.mutateAsync({ uri: comment.uri, cid: comment.cid });
-    } catch (err) {
-      console.error("Failed to like:", err);
+  const handleReaction = (emoji: string) => {
+    if (!currentUserDid) {
+      toast.error("Sign in to react");
+      return;
     }
+
+    toggleReactionMutation.mutate({
+      uri: comment.uri,
+      cid: comment.cid,
+      emoji,
+      currentUserReactionUri: userReaction?.uri,
+      currentUserEmoji: userReaction?.emoji,
+    });
   };
 
   const handleReply = () => {
@@ -232,15 +239,14 @@ function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, 
           </div>
         </div>
         <p className="text-sm text-foreground">{comment.text}</p>
-        <div className="flex items-center gap-4 text-muted-foreground">
-          <button
-            className={`flex items-center gap-1 text-xs hover:text-primary ${userReaction ? "text-primary" : ""}`}
-            onClick={handleLike}
-            disabled={!currentUserDid || likeCommentMutation.isPending}
-          >
-            <Heart className={`h-3 w-3 ${userReaction ? "fill-current" : ""}`} />
-            {totalReactions}
-          </button>
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <ReactionPicker
+            reactions={reactions}
+            userReaction={userReaction}
+            onReact={handleReaction}
+            disabled={!currentUserDid || toggleReactionMutation.isPending}
+            size="sm"
+          />
           <button className="flex items-center gap-1 text-xs hover:text-primary" onClick={handleReply}>
             <MessageCircle className="h-3 w-3" />
             Reply

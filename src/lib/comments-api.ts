@@ -33,6 +33,10 @@ export interface ProfileData {
 export interface CommentsResponse {
   comments: CommentIndexRow[];
   profiles: Record<string, ProfileData>;
+  reactionsByComment?: Record<string, { 
+    counts: Record<string, number>; 
+    userReaction?: { emoji: string; uri: string } 
+  }>;
 }
 
 export interface CommentsWithProfiles {
@@ -155,11 +159,16 @@ export async function getComments(
     params.set("txId", options.txId);
   }
 
+  // Include auth header if available to get user's reactions
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  const sessionToken = getSessionToken();
+  if (sessionToken) {
+    headers.Authorization = `Bearer ${sessionToken}`;
+  }
+
   const response = await fetch(`${COMMENTS_URL}?${params.toString()}`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -168,11 +177,14 @@ export async function getComments(
   }
 
   const data: CommentsResponse = await response.json();
+  const reactionsByComment = data.reactionsByComment || {};
   
-  // TODO: Aggregate like counts from likes_index
-  // For now, return with 0 likes
   return {
-    comments: data.comments.map((row) => indexRowToComment(row)),
+    comments: data.comments.map((row) => {
+      const reactions = reactionsByComment[row.uri]?.counts || {};
+      const userReaction = reactionsByComment[row.uri]?.userReaction;
+      return indexRowToComment(row, reactions, userReaction);
+    }),
     profiles: data.profiles || {},
   };
 }
@@ -338,9 +350,17 @@ export async function getContractReactions(
   contractName: string
 ): Promise<ContractReactionsResponse> {
   const params = new URLSearchParams({ principal, contractName });
+  
+  // Include auth header if available to get user's reaction
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  const sessionToken = getSessionToken();
+  if (sessionToken) {
+    headers.Authorization = `Bearer ${sessionToken}`;
+  }
+  
   const response = await fetch(`${COMMENTS_URL}/contract-reactions?${params.toString()}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers,
   });
 
   if (!response.ok) {

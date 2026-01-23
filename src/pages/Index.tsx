@@ -7,9 +7,12 @@ import { ContractViewer } from "@/components/ContractViewer";
 import { ContractHeader } from "@/components/ContractHeader";
 import { AuthButton } from "@/components/AuthButton";
 import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
-import { Loader2, AlertTriangle, Home } from "lucide-react";
+import { useContractReactions, useAddContractReaction } from "@/hooks/useContractReactions";
+import { Loader2, AlertTriangle, Home, MessageSquare } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
+import { ReactionPicker } from "@/components/ReactionPicker";
+import { toast } from "sonner";
 
 const Index = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
@@ -17,6 +20,13 @@ const Index = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const { user, isLoading: authLoading, login, logout } = useAtprotoAuth();
   const { data: contracts, isLoading, isFetching } = useContracts(debouncedSearch);
+
+  // Fetch reactions for selected contract
+  const { data: reactionsData } = useContractReactions(
+    selectedContract?.principal ?? "",
+    selectedContract?.name ?? ""
+  );
+  const addReactionMutation = useAddContractReaction();
 
   // Debounce search - only update after 300ms of no typing
   useEffect(() => {
@@ -34,6 +44,47 @@ const Index = () => {
       setSelectedContract(null);
     }
   }, [contracts]);
+
+  const handleContractReaction = async (emoji: string) => {
+    if (!user?.did) {
+      toast.error("Sign in to react");
+      return;
+    }
+    if (!selectedContract) return;
+
+    try {
+      await addReactionMutation.mutateAsync({
+        principal: selectedContract.principal,
+        contractName: selectedContract.name,
+        txId: selectedContract.tx_id ?? undefined,
+        emoji,
+      });
+    } catch (error) {
+      console.error("Reaction error:", error);
+      toast.error("Failed to add reaction");
+    }
+  };
+
+  const contractReactions = reactionsData?.reactions || {};
+  const userContractReaction = reactionsData?.userReaction;
+
+  // Build actions for ContractHeader
+  const contractActions = selectedContract ? (
+    <>
+      <ReactionPicker
+        reactions={contractReactions}
+        userReaction={userContractReaction}
+        onReact={handleContractReaction}
+        disabled={!user?.did || addReactionMutation.isPending}
+      />
+      <Button variant="outline" size="sm" asChild>
+        <Link to={`/contract/${selectedContract.principal}.${selectedContract.name}`}>
+          <MessageSquare className="h-4 w-4 mr-1" />
+          Comments
+        </Link>
+      </Button>
+    </>
+  ) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,6 +159,7 @@ const Index = () => {
                   txId={selectedContract.tx_id}
                   sourceHash={selectedContract.source_hash}
                   description={selectedContract.description}
+                  actions={contractActions}
                 />
                 <ContractViewer contract={selectedContract} currentUserDid={user?.did} />
               </>
