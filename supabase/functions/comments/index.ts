@@ -16,6 +16,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const OAUTH_ENCRYPTION_KEY = Deno.env.get("OAUTH_ENCRYPTION_KEY");
 
 // AT Protocol collection names
 const COMMENT_COLLECTION = "com.source-of-clarity.temp.comment";
@@ -23,6 +24,73 @@ const REACTION_COLLECTION = "com.source-of-clarity.temp.reaction";
 
 // Create Supabase client with service role for database access
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// ============= ENCRYPTION HELPERS =============
+// Application-level decryption using Web Crypto API (AES-GCM)
+
+async function getEncryptionKey(): Promise<CryptoKey> {
+  if (!OAUTH_ENCRYPTION_KEY) {
+    throw new Error("OAUTH_ENCRYPTION_KEY not configured");
+  }
+  
+  // Derive a 256-bit key from the secret using SHA-256
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(OAUTH_ENCRYPTION_KEY)
+  );
+  
+  return crypto.subtle.importKey(
+    "raw",
+    keyMaterial,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function decryptSecret(ciphertext: string): Promise<string> {
+  if (!ciphertext) return ciphertext;
+  
+  const key = await getEncryptionKey();
+  
+  // Decode base64 and split IV from ciphertext
+  const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encrypted
+  );
+  
+  return new TextDecoder().decode(decrypted);
+}
+
+async function encryptSecret(plaintext: string): Promise<string> {
+  if (!plaintext) return plaintext;
+  
+  const key = await getEncryptionKey();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+  
+  // Generate random IV (12 bytes for AES-GCM)
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    data
+  );
+  
+  // Combine IV + ciphertext and encode as base64
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
+}
 
 /**
  * Validate session token, refresh if needed, and return session data with fresh token
@@ -41,11 +109,20 @@ async function getValidSession(sessionToken: string): Promise<{
     throw new Error("Invalid session");
   }
 
+  // Decrypt sensitive fields
+  const decryptedAccessToken = await decryptSecret(session.access_token);
+  const decryptedRefreshToken = session.refresh_token 
+    ? await decryptSecret(session.refresh_token) 
+    : null;
+  const decryptedDpopKey = session.dpop_private_key_jwk 
+    ? await decryptSecret(session.dpop_private_key_jwk) 
+    : null;
+
   // Check if token is expired or about to expire
   if (isTokenExpired(session.token_expires_at)) {
     console.log("Access token expired, refreshing...");
     
-    if (!session.refresh_token || !session.auth_server_url) {
+    if (!decryptedRefreshToken || !session.auth_server_url) {
       throw new Error("Session cannot be refreshed - missing refresh token or auth server URL");
     }
 
@@ -54,20 +131,24 @@ async function getValidSession(sessionToken: string): Promise<{
         {
           did: session.did,
           pds_url: session.pds_url,
-          access_token: session.access_token,
-          dpop_private_key_jwk: session.dpop_private_key_jwk,
+          access_token: decryptedAccessToken,
+          dpop_private_key_jwk: decryptedDpopKey || "",
           auth_server_url: session.auth_server_url,
         },
-        session.refresh_token,
+        decryptedRefreshToken,
         session.auth_server_url
       );
+
+      // Encrypt new tokens before storing
+      const encryptedAccessToken = await encryptSecret(newTokens.accessToken);
+      const encryptedRefreshToken = await encryptSecret(newTokens.refreshToken);
 
       // Update session in database
       const { error: updateError } = await supabase
         .from("atproto_sessions")
         .update({
-          access_token: newTokens.accessToken,
-          refresh_token: newTokens.refreshToken,
+          access_token: encryptedAccessToken,
+          refresh_token: encryptedRefreshToken,
           token_expires_at: newTokens.expiresAt.toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -84,6 +165,7 @@ async function getValidSession(sessionToken: string): Promise<{
           ...session,
           access_token: newTokens.accessToken,
           refresh_token: newTokens.refreshToken,
+          dpop_private_key_jwk: decryptedDpopKey,
           token_expires_at: newTokens.expiresAt.toISOString(),
         },
         refreshed: true,
@@ -94,7 +176,15 @@ async function getValidSession(sessionToken: string): Promise<{
     }
   }
 
-  return { session, refreshed: false };
+  return { 
+    session: {
+      ...session,
+      access_token: decryptedAccessToken,
+      refresh_token: decryptedRefreshToken,
+      dpop_private_key_jwk: decryptedDpopKey || "",
+    }, 
+    refreshed: false 
+  };
 }
 
 /**
