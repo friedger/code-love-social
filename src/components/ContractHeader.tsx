@@ -1,5 +1,5 @@
 import { ContractIdenticon } from "./ContractIdenticon";
-import { formatContractId, getContractPath } from "@/lib/utils";
+import { formatContractId, getContractPath, getExplorerContractUrl } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 
 interface ContractHeaderProps {
@@ -39,17 +39,15 @@ export function ContractHeader({
             <h2 className="font-mono text-base sm:text-lg text-foreground break-all">
               {formatContractId(principal, contractName)}
             </h2>
-            {txId && (
-              <a
-                href={`https://explorer.stxer.xyz/txid/${txId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <span>View on Explorer</span>
-                <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              </a>
-            )}
+            <a
+              href={getExplorerContractUrl(principal, contractName)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <span>View on Explorer</span>
+              <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            </a>
             {description && (
               <p className="text-muted-foreground text-xs sm:text-sm mt-1">{description}</p>
             )}

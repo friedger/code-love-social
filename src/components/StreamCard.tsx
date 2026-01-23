@@ -8,7 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { Comment, KNOWN_REACTIONS } from "@/lexicon/types";
 import type { ProfileData } from "@/lib/comments-api";
 import { ContractIdenticon } from "./ContractIdenticon";
-import { formatContractId, getContractPath } from "@/lib/utils";
+import { formatContractId, getContractPath, getExplorerContractUrl } from "@/lib/utils";
 
 interface StreamCardProps {
   comment: Comment;
@@ -59,17 +59,15 @@ export function StreamCard({ comment, profile }: StreamCardProps) {
                 </span>
               )}
             </div>
-            {txId && (
-              <a
-                href={`https://explorer.stxer.xyz/txid/${txId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-0.5"
-              >
-                <span>View TX</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
+            <a
+              href={getExplorerContractUrl(comment.subject.principal, comment.subject.contractName)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-0.5"
+            >
+              <span>View on Explorer</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">

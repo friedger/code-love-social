@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ContractIdenticon } from "./ContractIdenticon";
-import { ellipseAddress, getContractPath } from "@/lib/utils";
+import { ellipseAddress, getContractPath, getExplorerContractUrl } from "@/lib/utils";
 
 interface ContractListItemProps {
   principal: string;
@@ -62,13 +62,13 @@ export function ContractListItem({
         )}
         {showTxLink && txId && (
           <a
-            href={`https://explorer.stxer.xyz/txid/${txId}`}
+            href={getExplorerContractUrl(principal, contractName)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1"
             onClick={(e) => e.stopPropagation()}
           >
-            <span>View TX</span>
+            <span>View on Explorer</span>
             <ExternalLink className="h-3 w-3" />
           </a>
         )}
