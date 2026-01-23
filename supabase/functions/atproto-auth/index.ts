@@ -9,9 +9,79 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const OAUTH_ENCRYPTION_KEY = Deno.env.get("OAUTH_ENCRYPTION_KEY");
 
 // Create Supabase client with service role for database access
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// ============= ENCRYPTION HELPERS =============
+// Application-level encryption using Web Crypto API (AES-GCM)
+
+async function getEncryptionKey(): Promise<CryptoKey> {
+  if (!OAUTH_ENCRYPTION_KEY) {
+    throw new Error("OAUTH_ENCRYPTION_KEY not configured");
+  }
+  
+  // Derive a 256-bit key from the secret using SHA-256
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(OAUTH_ENCRYPTION_KEY)
+  );
+  
+  return crypto.subtle.importKey(
+    "raw",
+    keyMaterial,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptSecret(plaintext: string): Promise<string> {
+  if (!plaintext) return plaintext;
+  
+  const key = await getEncryptionKey();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+  
+  // Generate random IV (12 bytes for AES-GCM)
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    data
+  );
+  
+  // Combine IV + ciphertext and encode as base64
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptSecret(ciphertext: string): Promise<string> {
+  if (!ciphertext) return ciphertext;
+  
+  const key = await getEncryptionKey();
+  
+  // Decode base64 and split IV from ciphertext
+  const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encrypted
+  );
+  
+  return new TextDecoder().decode(decrypted);
+}
+
+// ============= ORIGINAL HELPERS =============
 
 // Helper to generate random string
 function generateRandomString(length: number): string {
@@ -265,13 +335,17 @@ serve(async (req) => {
       // Generate state
       const state = generateRandomString(32);
       
-      // Store state in database (including auth_server_url for callback)
+      // Encrypt sensitive fields before storing
+      const encryptedVerifier = await encryptSecret(verifier);
+      const encryptedPrivateJwk = await encryptSecret(JSON.stringify(privateJwk));
+      
+      // Store state in database with encrypted sensitive fields
       const { error: stateError } = await supabase.from("atproto_oauth_state").insert({
         state,
-        code_verifier: verifier,
+        code_verifier: encryptedVerifier,
         return_url: returnUrl,
-        dpop_private_key_jwk: JSON.stringify(privateJwk),
-        dpop_public_key_jwk: JSON.stringify(publicJwk),
+        dpop_private_key_jwk: encryptedPrivateJwk,
+        dpop_public_key_jwk: JSON.stringify(publicJwk), // Public key doesn't need encryption
         did,
         pds_url: pdsUrl,
         auth_server_url: authServerUrl,
@@ -340,12 +414,16 @@ serve(async (req) => {
       // Delete used state
       await supabase.from("atproto_oauth_state").delete().eq("state", state);
 
+      // Decrypt sensitive fields
+      const codeVerifier = await decryptSecret(stateData.code_verifier);
+      const dpopPrivateKeyJwk = await decryptSecret(stateData.dpop_private_key_jwk);
+
       // Get auth server metadata from the stored authorization server URL
       const authServerUrl = stateData.auth_server_url || await getAuthorizationServerUrl(stateData.pds_url);
       const authMeta = await getAuthServerMetadata(authServerUrl);
       
       // Reconstruct DPoP keys
-      const privateJwk = JSON.parse(stateData.dpop_private_key_jwk);
+      const privateJwk = JSON.parse(dpopPrivateKeyJwk);
       const publicJwk = JSON.parse(stateData.dpop_public_key_jwk);
       
       const privateKey = await crypto.subtle.importKey(
@@ -376,7 +454,7 @@ serve(async (req) => {
           code,
           redirect_uri: `${functionUrl}/callback`,
           client_id: functionUrl,
-          code_verifier: stateData.code_verifier,
+          code_verifier: codeVerifier,
         }).toString(),
       });
 
@@ -405,7 +483,7 @@ serve(async (req) => {
               code,
               redirect_uri: `${functionUrl}/callback`,
               client_id: functionUrl,
-              code_verifier: stateData.code_verifier,
+              code_verifier: codeVerifier,
             }).toString(),
           });
 
@@ -431,18 +509,25 @@ serve(async (req) => {
       // Generate session token
       const sessionToken = generateRandomString(64);
 
-      // Store session in database
+      // Encrypt sensitive session fields
+      const encryptedAccessToken = await encryptSecret(tokenData.access_token);
+      const encryptedRefreshToken = tokenData.refresh_token 
+        ? await encryptSecret(tokenData.refresh_token) 
+        : null;
+      const encryptedDpopPrivateKey = await encryptSecret(JSON.stringify(privateJwk));
+
+      // Store session in database with encrypted sensitive fields
       const { error: sessionError } = await supabase.from("atproto_sessions").insert({
         session_token: sessionToken,
         did: stateData.did,
         handle: "", // Will be fetched on session retrieval
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
+        access_token: encryptedAccessToken,
+        refresh_token: encryptedRefreshToken,
         token_expires_at: tokenData.expires_in
           ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
           : null,
         pds_url: stateData.pds_url,
-        dpop_private_key_jwk: stateData.dpop_private_key_jwk,
+        dpop_private_key_jwk: encryptedDpopPrivateKey,
         auth_server_url: authServerUrl,
       });
 
@@ -487,8 +572,12 @@ serve(async (req) => {
         });
       }
 
+      // Decrypt sensitive session fields
+      const accessToken = await decryptSecret(session.access_token);
+      const dpopPrivateKeyJwk = await decryptSecret(session.dpop_private_key_jwk);
+
       // Fetch user profile from PDS
-      const privateJwk = JSON.parse(session.dpop_private_key_jwk);
+      const privateJwk = JSON.parse(dpopPrivateKeyJwk);
       const privateKey = await crypto.subtle.importKey(
         "jwk",
         privateJwk,
@@ -510,7 +599,7 @@ serve(async (req) => {
       // Create access token hash for DPoP
       const tokenHash = await crypto.subtle.digest(
         "SHA-256",
-        new TextEncoder().encode(session.access_token)
+        new TextEncoder().encode(accessToken)
       );
       const ath = btoa(String.fromCharCode(...new Uint8Array(tokenHash)))
         .replace(/\+/g, "-")
@@ -528,7 +617,7 @@ serve(async (req) => {
 
       const profileResponse = await fetch(profileUrl, {
         headers: {
-          Authorization: `DPoP ${session.access_token}`,
+          Authorization: `DPoP ${accessToken}`,
           DPoP: dpopProof,
         },
       });
@@ -548,7 +637,7 @@ serve(async (req) => {
 
           const retryResponse = await fetch(profileUrl, {
             headers: {
-              Authorization: `DPoP ${session.access_token}`,
+              Authorization: `DPoP ${accessToken}`,
               DPoP: dpopProofWithNonce,
             },
           });
