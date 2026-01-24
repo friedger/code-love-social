@@ -10,7 +10,7 @@ interface ReactionPickerProps {
   userReaction?: { emoji: string; uri: string };
   onReact: (emoji: string) => void;
   disabled?: boolean;
-  size?: "sm" | "default";
+  size?: "xs" | "sm" | "default";
 }
 
 export function ReactionPicker({ 
@@ -21,10 +21,10 @@ export function ReactionPicker({
   size = "default"
 }: ReactionPickerProps) {
   const hasReactions = Object.keys(reactions).length > 0;
-  const buttonSize = size === "sm" ? "h-6 w-6 p-0" : "h-7 w-7 p-0";
-  const emojiSize = size === "sm" ? "text-sm" : "text-lg";
-  const countSize = size === "sm" ? "text-[10px]" : "text-xs";
-  const pillPadding = size === "sm" ? "px-1 py-0.5" : "px-1.5 py-0.5";
+  const buttonSize = size === "xs" ? "h-5 w-5 p-0" : size === "sm" ? "h-6 w-6 p-0" : "h-7 w-7 p-0";
+  const emojiSize = size === "xs" ? "text-xs" : size === "sm" ? "text-sm" : "text-lg";
+  const countSize = size === "xs" ? "text-[9px]" : size === "sm" ? "text-[10px]" : "text-xs";
+  const pillPadding = size === "xs" ? "px-0.5 py-0" : size === "sm" ? "px-1 py-0.5" : "px-1.5 py-0.5";
 
   return (
     <div className="flex items-center gap-1 flex-wrap">
@@ -61,7 +61,7 @@ export function ReactionPicker({
             className={cn(buttonSize, "text-muted-foreground hover:text-foreground")}
             disabled={disabled}
           >
-            <SmilePlus className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} />
+            <SmilePlus className={size === "xs" ? "h-2.5 w-2.5" : size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-2" align="start">
