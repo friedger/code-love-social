@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
 import { ContractViewer, type ContractViewerRef } from "@/components/ContractViewer";
-import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ArrowLeft, AlertCircle, SmilePlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
@@ -17,7 +17,7 @@ const REACTION_EMOJIS = ['👍', '❤️', '🔥', '👀', '🚀', '⚠️'] as 
 const ContractPage = () => {
   const { contractId } = useParams<{ contractId: string }>();
   const [searchParams] = useSearchParams();
-  const { user } = useAtprotoAuth();
+  const { user } = useAuth();
   const viewerRef = useRef<ContractViewerRef>(null);
   const [reactionPopoverOpen, setReactionPopoverOpen] = useState(false);
 
@@ -170,7 +170,7 @@ const ContractPage = () => {
             <ContractViewer
               ref={viewerRef}
               contract={contract}
-              currentUserDid={user?.did}
+              currentUserDid={user?.id}
               initialSelectedLine={initialLine}
               initialLineRange={initialRange}
             />

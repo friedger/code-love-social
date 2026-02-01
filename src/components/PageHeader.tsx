@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { AuthButton } from "@/components/AuthButton";
-import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { FileCode, Plus, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ showBackToHome = true }: PageHeaderProps) {
-  const { user, isLoading, login, logout } = useAtprotoAuth();
+  const { user, isLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, logout } = useAuth();
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -82,7 +82,9 @@ export function PageHeader({ showBackToHome = true }: PageHeaderProps) {
           <AuthButton
             user={user}
             isLoading={isLoading}
-            onLogin={login}
+            hasNostrExtension={hasNostrExtension}
+            onLoginAtproto={loginWithAtproto}
+            onLoginNostr={loginWithNostr}
             onLogout={logout}
           />
         </div>
