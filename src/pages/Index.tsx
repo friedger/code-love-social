@@ -6,7 +6,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ContractExplorerCard } from "@/components/ContractExplorerCard";
 import { AuthButton } from "@/components/AuthButton";
-import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2, AlertTriangle, Home, Search, Plus } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const Index = () => {
   const [inputValue, setInputValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const { user, isLoading: authLoading, login, logout } = useAtprotoAuth();
+  const { user, isLoading: authLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, logout } = useAuth();
   const { data: contracts, isLoading, isFetching } = useContracts(debouncedSearch);
   const { data: categories } = useCategories();
 
@@ -34,6 +34,9 @@ const Index = () => {
     if (!selectedCategory) return contracts;
     return contracts.filter((c) => c.category === selectedCategory);
   }, [contracts, selectedCategory]);
+
+  // Get user ID based on auth type
+  const currentUserId = user?.id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +74,9 @@ const Index = () => {
             <AuthButton
               user={user}
               isLoading={authLoading}
-              onLogin={login}
+              hasNostrExtension={hasNostrExtension}
+              onLoginAtproto={loginWithAtproto}
+              onLoginNostr={loginWithNostr}
               onLogout={logout}
             />
           </div>
@@ -130,7 +135,7 @@ const Index = () => {
               <ContractExplorerCard
                 key={contract.id}
                 contract={contract}
-                currentUserDid={user?.did}
+                currentUserDid={currentUserId}
               />
             ))}
           </div>

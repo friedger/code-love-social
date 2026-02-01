@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getCommentsByAuthor, ProfileData } from "@/lib/comments-api";
 import { identityService } from "@/lib/identity-service";
-import { useAtprotoAuth } from "@/hooks/useAtprotoAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,7 @@ import { getContractPath } from "@/lib/utils";
 
 const ProfilePage = () => {
   const { did: identifier } = useParams<{ did: string }>();
-  const { user } = useAtprotoAuth();
+  const { user } = useAuth();
 
   // Determine if we need to resolve the identifier
   const isHandle = identifier ? identityService.isHandle(identifier) : false;
@@ -97,7 +97,7 @@ const ProfilePage = () => {
                           @{displayProfile?.handle || did?.slice(0, 20)}
                         </p>
                       </div>
-                      {did && <FollowButton targetDid={did} currentUserDid={user?.did} />}
+                      {did && <FollowButton targetDid={did} currentUserDid={user?.id} />}
                     </div>
                     <a
                       href={`https://bsky.app/profile/${displayProfile?.handle || did}`}

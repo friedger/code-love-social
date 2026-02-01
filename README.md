@@ -50,6 +50,16 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Environment Variables
+
+The following environment variables can be configured:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_NOSTR_RELAY` | Nostr relay WebSocket URL for fetching profiles | `wss://relay.damus.io` |
+
+To set custom environment variables, create a `.env.local` file in the project root.
+
 ## What technologies are used for this project?
 
 This project is built with:
@@ -59,6 +69,8 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- AT Protocol (Bluesky) for social features
+- Nostr (NIP-07) for decentralized authentication
 
 ## How can I deploy this project?
 
