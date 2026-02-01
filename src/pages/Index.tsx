@@ -16,7 +16,7 @@ const Index = () => {
   const [inputValue, setInputValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const { user, isLoading: authLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, logout } = useAuth();
+  const { user, isLoading: authLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, loginWithMatrix, logout } = useAuth();
   const { data: contracts, isLoading, isFetching } = useContracts(debouncedSearch);
   const { data: categories } = useCategories();
 
@@ -77,6 +77,7 @@ const Index = () => {
               hasNostrExtension={hasNostrExtension}
               onLoginAtproto={loginWithAtproto}
               onLoginNostr={loginWithNostr}
+              onLoginMatrix={loginWithMatrix}
               onLogout={logout}
             />
           </div>

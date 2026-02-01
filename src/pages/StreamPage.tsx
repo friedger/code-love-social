@@ -5,10 +5,11 @@ import { getCommentsStream, searchComments } from "@/lib/comments-api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Search, AlertTriangle, Loader2 } from "lucide-react";
+import { MessageSquare, Search, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { StreamCard } from "@/components/StreamCard";
 import { ContractMatchCard } from "@/components/ContractMatchCard";
+import { WarningBanner } from "@/components/WarningBanner";
 import { getContractPath } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,9 +20,7 @@ const StreamPage = () => {
 
   // Debounce search input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(inputValue);
-    }, 300);
+    const timer = setTimeout(() => setDebouncedSearch(inputValue), 300);
     return () => clearTimeout(timer);
   }, [inputValue]);
 
@@ -69,14 +68,9 @@ const StreamPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Temporary Banner */}
-      <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2">
-        <div className="container mx-auto flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>All comments are temporary and may require migration to a new namespace in the future.</span>
-        </div>
-      </div>
-
+      <WarningBanner>
+        All comments are temporary and may require migration to a new namespace in the future.
+      </WarningBanner>
       <PageHeader />
 
       <main className="container mx-auto px-4 py-6 max-w-3xl">
@@ -111,7 +105,7 @@ const StreamPage = () => {
           </div>
         )}
 
-        {/* Search result count (only when searching) */}
+        {/* Search result count */}
         {isSearching && (
           <p className="text-sm text-muted-foreground mb-4">
             {comments?.length || 0} results for "{debouncedSearch}"
@@ -120,55 +114,20 @@ const StreamPage = () => {
 
         {/* Comments stream/results */}
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-48 mb-1" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <Skeleton className="h-3 w-20 mb-1" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-3/4" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <StreamLoadingSkeleton />
         ) : error ? (
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Failed to load {isSearching ? "search results" : "activity stream"}</p>
-            </CardContent>
-          </Card>
+          <StreamEmptyState
+            message={`Failed to load ${isSearching ? "search results" : "activity stream"}`}
+          />
         ) : !comments || comments.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>
-                {isSearching
-                  ? `No comments found matching "${debouncedSearch}"`
-                  : "No comments yet. Be the first to discuss a contract!"}
-              </p>
-              {isSearching && (
-                <Link
-                  to="/contracts"
-                  className="inline-block mt-3 text-sm text-primary hover:underline"
-                >
-                  Browse contracts →
-                </Link>
-              )}
-            </CardContent>
-          </Card>
+          <StreamEmptyState
+            message={
+              isSearching
+                ? `No comments found matching "${debouncedSearch}"`
+                : "No comments yet. Be the first to discuss a contract!"
+            }
+            showBrowseLink={isSearching}
+          />
         ) : (
           <div className="space-y-3">
             {comments.map((comment) => (
@@ -185,5 +144,57 @@ const StreamPage = () => {
     </div>
   );
 };
+
+function StreamLoadingSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Card key={i}>
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex-1">
+                <Skeleton className="h-4 w-48 mb-1" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <Skeleton className="h-3 w-20 mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+interface StreamEmptyStateProps {
+  message: string;
+  showBrowseLink?: boolean;
+}
+
+function StreamEmptyState({ message, showBrowseLink }: StreamEmptyStateProps) {
+  return (
+    <Card>
+      <CardContent className="p-6 text-center text-muted-foreground">
+        <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
+        <p>{message}</p>
+        {showBrowseLink && (
+          <Link
+            to="/contracts"
+            className="inline-block mt-3 text-sm text-primary hover:underline"
+          >
+            Browse contracts →
+          </Link>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default StreamPage;

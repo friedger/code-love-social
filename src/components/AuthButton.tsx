@@ -16,10 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogIn, LogOut, User as UserIcon, Loader2, Zap } from "lucide-react";
+import { LogIn, LogOut, User as UserIcon, Loader2, Zap, Grid3X3 } from "lucide-react";
+import { BlueskyLoginForm, NostrLoginForm, MatrixLoginForm } from "@/components/auth";
 import type { UnifiedUser } from "@/hooks/useAuth";
 
 interface AuthButtonProps {
@@ -28,8 +27,20 @@ interface AuthButtonProps {
   hasNostrExtension: boolean;
   onLoginAtproto: (handle: string) => Promise<void>;
   onLoginNostr: () => Promise<void>;
+  onLoginMatrix: (userId: string, password: string) => Promise<void>;
   onLogout: () => Promise<void>;
 }
+
+const AUTH_TYPE_LABELS: Record<string, string> = {
+  atproto: "Bluesky",
+  nostr: "Nostr",
+  matrix: "Matrix",
+};
+
+const AUTH_TYPE_ICONS: Record<string, React.ReactNode> = {
+  nostr: <Zap className="h-3 w-3 text-amber-500" />,
+  matrix: <Grid3X3 className="h-3 w-3 text-green-500" />,
+};
 
 export function AuthButton({
   user,
@@ -37,20 +48,17 @@ export function AuthButton({
   hasNostrExtension,
   onLoginAtproto,
   onLoginNostr,
+  onLoginMatrix,
   onLogout,
 }: AuthButtonProps) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [handle, setHandle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("bluesky");
 
-  const handleAtprotoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!handle.trim()) return;
-
+  const handleAtprotoSubmit = async (handle: string) => {
     setIsSubmitting(true);
     try {
-      await onLoginAtproto(handle.trim());
+      await onLoginAtproto(handle);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,6 +74,16 @@ export function AuthButton({
     }
   };
 
+  const handleMatrixSubmit = async (userId: string, password: string) => {
+    setIsSubmitting(true);
+    try {
+      await onLoginMatrix(userId, password);
+      setShowLoginDialog(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Button variant="ghost" disabled>
@@ -75,10 +93,15 @@ export function AuthButton({
   }
 
   if (user) {
-    const profilePath =
-      user.authType === "atproto"
-        ? `/profile/${user.handle}`
-        : `/profile/${user.id}`;
+    const profilePath = user.authType === "atproto"
+      ? `/profile/${user.handle}`
+      : `/profile/${user.id}`;
+
+    const displayId = user.authType === "atproto"
+      ? `@${user.handle}`
+      : user.id.length > 20
+        ? `${user.id.slice(0, 16)}...`
+        : user.id;
 
     return (
       <DropdownMenu>
@@ -89,19 +112,15 @@ export function AuthButton({
               <AvatarFallback>{user.displayName[0]}</AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">{user.displayName}</span>
-            {user.authType === "nostr" && (
-              <Zap className="h-3 w-3 text-amber-500" />
-            )}
+            {AUTH_TYPE_ICONS[user.authType]}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <div className="px-2 py-1.5">
             <p className="text-sm font-medium">{user.displayName}</p>
+            <p className="text-xs text-muted-foreground">{displayId}</p>
             <p className="text-xs text-muted-foreground">
-              {user.authType === "atproto" ? `@${user.handle}` : user.id.slice(0, 16) + "..."}
-            </p>
-            <p className="text-xs text-muted-foreground capitalize">
-              {user.authType === "atproto" ? "Bluesky" : "Nostr"}
+              {AUTH_TYPE_LABELS[user.authType]}
             </p>
           </div>
           <DropdownMenuSeparator />
@@ -135,101 +154,38 @@ export function AuthButton({
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="bluesky">Bluesky</TabsTrigger>
               <TabsTrigger value="nostr" className="gap-1">
                 <Zap className="h-3 w-3" />
                 Nostr
               </TabsTrigger>
+              <TabsTrigger value="matrix" className="gap-1">
+                <Grid3X3 className="h-3 w-3" />
+                Matrix
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="bluesky" className="space-y-4 mt-4">
-              <form onSubmit={handleAtprotoSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="handle">Handle</Label>
-                  <Input
-                    id="handle"
-                    placeholder="yourname.bsky.social"
-                    value={handle}
-                    onChange={(e) => setHandle(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter your full handle (e.g., alice.bsky.social)
-                  </p>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting || !handle.trim()}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : (
-                    "Continue with Bluesky"
-                  )}
-                </Button>
-              </form>
+            <TabsContent value="bluesky" className="mt-4">
+              <BlueskyLoginForm
+                onSubmit={handleAtprotoSubmit}
+                isSubmitting={isSubmitting}
+              />
             </TabsContent>
 
-            <TabsContent value="nostr" className="space-y-4 mt-4">
-              <div className="space-y-4">
-                {hasNostrExtension ? (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      Sign in using your Nostr browser extension (NIP-07).
-                    </p>
-                    <Button
-                      className="w-full"
-                      onClick={handleNostrLogin}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Connecting...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="h-4 w-4 mr-2" />
-                          Sign in with Extension
-                        </>
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="text-center space-y-3 py-4">
-                    <Zap className="h-8 w-8 mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      No Nostr extension detected.
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Install a NIP-07 compatible extension like{" "}
-                      <a
-                        href="https://getalby.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
-                        Alby
-                      </a>{" "}
-                      or{" "}
-                      <a
-                        href="https://github.com/nicehash/NiceWallet"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
-                        nos2x
-                      </a>{" "}
-                      to sign in with Nostr.
-                    </p>
-                  </div>
-                )}
-              </div>
+            <TabsContent value="nostr" className="mt-4">
+              <NostrLoginForm
+                hasExtension={hasNostrExtension}
+                onLogin={handleNostrLogin}
+                isSubmitting={isSubmitting}
+              />
+            </TabsContent>
+
+            <TabsContent value="matrix" className="mt-4">
+              <MatrixLoginForm
+                onSubmit={handleMatrixSubmit}
+                isSubmitting={isSubmitting}
+              />
             </TabsContent>
           </Tabs>
         </DialogContent>
