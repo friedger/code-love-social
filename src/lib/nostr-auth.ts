@@ -2,6 +2,7 @@
 // Supports extensions like Alby, nos2x, and other NIP-07 compatible signers
 
 import { nip19 } from "nostr-tools";
+import { getStoredSession, setStoredSession, clearStoredSession } from "./auth-utils";
 
 const NOSTR_SESSION_KEY = "nostr_session";
 
@@ -160,21 +161,15 @@ interface NostrProfile {
 
 // Session management
 export function getNostrSession(): NostrUser | null {
-  try {
-    const stored = localStorage.getItem(NOSTR_SESSION_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored) as NostrUser;
-  } catch {
-    return null;
-  }
+  return getStoredSession<NostrUser>(NOSTR_SESSION_KEY);
 }
 
 export function setNostrSession(user: NostrUser): void {
-  localStorage.setItem(NOSTR_SESSION_KEY, JSON.stringify(user));
+  setStoredSession(NOSTR_SESSION_KEY, user);
 }
 
 export function clearNostrSession(): void {
-  localStorage.removeItem(NOSTR_SESSION_KEY);
+  clearStoredSession(NOSTR_SESSION_KEY);
 }
 
 // Logout

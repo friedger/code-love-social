@@ -16,7 +16,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ showBackToHome = true }: PageHeaderProps) {
-  const { user, isLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, logout } = useAuth();
+  const { user, isLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, loginWithMatrix, logout } = useAuth();
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -85,6 +85,7 @@ export function PageHeader({ showBackToHome = true }: PageHeaderProps) {
             hasNostrExtension={hasNostrExtension}
             onLoginAtproto={loginWithAtproto}
             onLoginNostr={loginWithNostr}
+            onLoginMatrix={loginWithMatrix}
             onLogout={logout}
           />
         </div>
