@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useContract } from "@/hooks/useContracts";
+import { useRelatedContracts } from "@/hooks/useRelatedContracts";
 import { ContractViewer, type ContractViewerRef } from "@/components/ContractViewer";
+import { RelatedContractsList } from "@/components/RelatedContractsList";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ArrowLeft, AlertCircle, SmilePlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ const ContractPage = () => {
     : undefined;
 
   const { data: contract, isLoading, error } = useContract(principal, name);
+  const { data: relatedContracts } = useRelatedContracts(contract?.source_hash ?? null, contract?.id);
   const { data: reactions } = useContractReactions(principal, name);
   const addReactionMutation = useAddContractReaction();
 
@@ -167,13 +170,20 @@ const ContractPage = () => {
                 </>
               }
             />
-            <ContractViewer
-              ref={viewerRef}
-              contract={contract}
-              currentUserDid={user?.id}
-              initialSelectedLine={initialLine}
-              initialLineRange={initialRange}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+              <ContractViewer
+                ref={viewerRef}
+                contract={contract}
+                currentUserDid={user?.id}
+                initialSelectedLine={initialLine}
+                initialLineRange={initialRange}
+              />
+              {relatedContracts && relatedContracts.length > 0 && (
+                <aside className="space-y-4">
+                  <RelatedContractsList contracts={relatedContracts} />
+                </aside>
+              )}
+            </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">
