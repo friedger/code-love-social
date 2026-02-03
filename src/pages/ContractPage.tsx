@@ -4,6 +4,7 @@ import { useContract } from "@/hooks/useContracts";
 import { useRelatedContracts } from "@/hooks/useRelatedContracts";
 import { ContractViewer, type ContractViewerRef } from "@/components/ContractViewer";
 import { RelatedContractsList } from "@/components/RelatedContractsList";
+import { RelatedContractsIcons } from "@/components/RelatedContractsIcons";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ArrowLeft, AlertCircle, SmilePlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,11 @@ const ContractPage = () => {
     : undefined;
 
   const { data: contract, isLoading, error } = useContract(principal, name);
-  const { data: relatedContracts } = useRelatedContracts(contract?.source_hash ?? null, contract?.id);
+  const { data: relatedContracts } = useRelatedContracts({
+    sourceHash: contract?.source_hash ?? null,
+    currentPrincipal: principal,
+    currentName: name,
+  });
   const { data: reactions } = useContractReactions(principal, name);
   const addReactionMutation = useAddContractReaction();
 
@@ -170,6 +175,11 @@ const ContractPage = () => {
                 </>
               }
             />
+            {/* Related contracts icons above the viewer */}
+            {relatedContracts && relatedContracts.length > 0 && (
+              <RelatedContractsIcons contracts={relatedContracts} />
+            )}
+            
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
               <ContractViewer
                 ref={viewerRef}

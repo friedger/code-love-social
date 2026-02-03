@@ -3,10 +3,10 @@ import { Copy, ExternalLink } from "lucide-react";
 import { ContractIdenticon } from "@/components/ContractIdenticon";
 import { formatContractIdShort, getContractPath } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { Contract } from "@/types/contract";
+import type { RelatedContract } from "@/hooks/useRelatedContracts";
 
 interface RelatedContractsListProps {
-  contracts: Pick<Contract, "id" | "principal" | "name" | "source_hash" | "description" | "category">[];
+  contracts: RelatedContract[];
 }
 
 export function RelatedContractsList({ contracts }: RelatedContractsListProps) {
