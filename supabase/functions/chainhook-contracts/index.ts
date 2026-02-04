@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encode as encodeHex } from "https://deno.land/std@0.168.0/encoding/hex.ts";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitResponse, 
+  RATE_LIMITS 
+} from "../_shared/rate-limiter.ts";
 
 /**
  * Compute SHA-512/256 hash of source code for identicon generation.
@@ -22,6 +28,13 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limit by IP before auth check
+  const clientIP = getClientIP(req);
+  const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.chainhook);
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult, corsHeaders);
   }
 
   // Verify bearer token for Chainhook authentication

@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitResponse, 
+  RATE_LIMITS 
+} from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -306,6 +312,13 @@ serve(async (req) => {
 
     // Route: GET /login - Start OAuth flow
     if (url.pathname === "/atproto-auth/login") {
+      // Rate limit login attempts by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.authLogin);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const handle = url.searchParams.get("handle");
       const returnUrl = url.searchParams.get("return_url");
 
@@ -377,6 +390,13 @@ serve(async (req) => {
 
     // Route: GET /callback - Handle OAuth callback
     if (url.pathname === "/atproto-auth/callback") {
+      // Rate limit callback attempts by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.authCallback);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const code = url.searchParams.get("code");
       const state = url.searchParams.get("state");
       const error = url.searchParams.get("error");
@@ -549,6 +569,13 @@ serve(async (req) => {
 
     // Route: GET /session - Get current session
     if (url.pathname === "/atproto-auth/session") {
+      // Rate limit session checks by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.authSession);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const authHeader = req.headers.get("Authorization");
       const sessionToken = authHeader?.replace("Bearer ", "");
 
@@ -697,6 +724,13 @@ serve(async (req) => {
 
     // Route: POST /logout - Logout and revoke session
     if (url.pathname === "/atproto-auth/logout" && req.method === "POST") {
+      // Rate limit logout by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.authLogout);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const authHeader = req.headers.get("Authorization");
       const sessionToken = authHeader?.replace("Bearer ", "");
 

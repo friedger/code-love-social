@@ -7,6 +7,12 @@ import {
   refreshAccessToken,
   type SessionData 
 } from "../_shared/atproto-agent.ts";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitResponse, 
+  RATE_LIMITS 
+} from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -265,6 +271,12 @@ serve(async (req) => {
     // ============== GET /comments ==============
     // List comments for a contract, by author, or all (stream)
     if (req.method === "GET" && pathParts.length === 1 && pathParts[0] === "comments") {
+      // Rate limit read operations by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.commentRead);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
       const principal = url.searchParams.get("principal");
       const contractName = url.searchParams.get("contractName");
       const lineNumber = url.searchParams.get("lineNumber");
@@ -412,7 +424,15 @@ serve(async (req) => {
         );
       }
 
+      // Get session first to use user DID for rate limiting
       const { session } = await getValidSession(sessionToken);
+      
+      // Rate limit create operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.commentCreate);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const body = await req.json();
       const input = validateCommentInput(body);
 
@@ -502,6 +522,13 @@ serve(async (req) => {
       }
 
       const { session } = await getValidSession(sessionToken);
+      
+      // Rate limit reaction operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.commentReaction);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const body = await req.json();
 
       if (!body.uri || !body.cid || !body.emoji) {
@@ -579,6 +606,13 @@ serve(async (req) => {
       }
 
       const { session } = await getValidSession(sessionToken);
+      
+      // Rate limit reaction operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.commentReaction);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const reactionUri = url.searchParams.get("uri");
 
       if (!reactionUri) {
@@ -625,6 +659,12 @@ serve(async (req) => {
     // ============== GET /comments/contract-reactions ==============
     // Get reactions for a contract (not a comment)
     if (req.method === "GET" && pathParts.length === 2 && pathParts[1] === "contract-reactions") {
+      // Rate limit read operations by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.commentRead);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
       const principal = url.searchParams.get("principal");
       const contractName = url.searchParams.get("contractName");
 
@@ -697,6 +737,13 @@ serve(async (req) => {
       }
 
       const { session } = await getValidSession(sessionToken);
+      
+      // Rate limit reaction operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.commentReaction);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const body = await req.json();
 
       const { principal, contractName, txId, emoji } = body;
@@ -819,6 +866,13 @@ serve(async (req) => {
       }
 
       const { session } = await getValidSession(sessionToken);
+      
+      // Rate limit delete operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.commentDelete);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const rkey = pathParts[1];
 
       // Create authenticated agent

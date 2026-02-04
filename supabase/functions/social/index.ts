@@ -5,6 +5,12 @@ import {
   isTokenExpired, 
   refreshAccessToken,
 } from "../_shared/atproto-agent.ts";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitResponse, 
+  RATE_LIMITS 
+} from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -246,6 +252,13 @@ serve(async (req) => {
     // ============== GET /social/follows?actor=... ==============
     // Get prioritized follows for a user
     if (req.method === "GET" && pathParts[1] === "follows") {
+      // Rate limit by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.socialFollows);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const actor = url.searchParams.get("actor");
       const limit = parseInt(url.searchParams.get("limit") || "50", 10);
 
@@ -290,6 +303,13 @@ serve(async (req) => {
     // ============== GET /social/relationship?target=... ==============
     // Check if current user follows a target
     if (req.method === "GET" && pathParts[1] === "relationship") {
+      // Rate limit by IP
+      const clientIP = getClientIP(req);
+      const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.socialRelationship);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const authHeader = req.headers.get("Authorization");
       const sessionToken = authHeader?.replace("Bearer ", "");
       const target = url.searchParams.get("target");
@@ -332,6 +352,13 @@ serve(async (req) => {
       }
 
       const session = await getValidSession(sessionToken);
+      
+      // Rate limit follow operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.socialFollow);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const body = await req.json();
       const { did: targetDid } = body;
 
@@ -375,6 +402,13 @@ serve(async (req) => {
       }
 
       const session = await getValidSession(sessionToken);
+      
+      // Rate limit unfollow operations by user DID
+      const rateLimitResult = checkRateLimit(session.did, RATE_LIMITS.socialUnfollow);
+      if (!rateLimitResult.success) {
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+
       const followUri = url.searchParams.get("uri");
 
       if (!followUri) {
