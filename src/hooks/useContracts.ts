@@ -19,7 +19,7 @@ export function useContracts(searchQuery?: string) {
 
       if (searchQuery) {
         query = query.or(
-          `name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`
+          `principal.ilike.%${searchQuery}%,name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`
         );
       }
 
