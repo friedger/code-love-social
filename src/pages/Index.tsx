@@ -3,21 +3,26 @@ import { Link } from "react-router-dom";
 import { Contract } from "@/types/contract";
 import { useContracts } from "@/hooks/useContracts";
 import { useCategories } from "@/hooks/useCategories";
+import { useSearchComments } from "@/hooks/useSearchComments";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ContractExplorerCard } from "@/components/ContractExplorerCard";
+import { StreamCard } from "@/components/StreamCard";
 import { AuthButton } from "@/components/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, AlertTriangle, Home, Search, Plus } from "lucide-react";
+import { Loader2, AlertTriangle, Home, Search, Plus, MessageSquare, FileCode } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const [inputValue, setInputValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("contracts");
   const { user, isLoading: authLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, loginWithMatrix, logout } = useAuth();
-  const { data: contracts, isLoading, isFetching } = useContracts(debouncedSearch);
+  const { data: contracts, isLoading: contractsLoading, isFetching: contractsFetching } = useContracts(debouncedSearch);
+  const { data: commentsData, isLoading: commentsLoading, isFetching: commentsFetching } = useSearchComments(debouncedSearch);
   const { data: categories } = useCategories();
 
   // Debounce search - only update after 300ms of no typing
@@ -34,6 +39,11 @@ const Index = () => {
     if (!selectedCategory) return contracts;
     return contracts.filter((c) => c.category === selectedCategory);
   }, [contracts, selectedCategory]);
+  
+  const isFetching = contractsFetching || commentsFetching;
+  const isSearching = debouncedSearch.length > 0;
+  const commentCount = commentsData?.comments?.length || 0;
+  const contractCount = filteredContracts?.length || 0;
 
   // Get user ID based on auth type
   const currentUserId = user?.id;
@@ -91,7 +101,7 @@ const Index = () => {
           <div className="relative max-w-xl">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search contracts by name, description, or category..."
+              placeholder="Search contracts and comments..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               className="pl-10 pr-10"
@@ -101,7 +111,7 @@ const Index = () => {
             )}
           </div>
           
-          {categories && categories.length > 0 && (
+          {!isSearching && categories && categories.length > 0 && (
             <CategoryFilter
               categories={categories}
               selectedCategory={selectedCategory}
@@ -110,36 +120,108 @@ const Index = () => {
           )}
         </div>
 
-        {/* Contract Cards */}
-        {isLoading && !contracts ? (
-          <div className="flex items-center justify-center h-48 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            Loading contracts...
-          </div>
-        ) : filteredContracts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-center px-4">
-            <p className="mb-4">
-              {contracts && contracts.length === 0
-                ? "No contracts found"
-                : "No contracts in this category"}
-            </p>
-            <Button variant="outline" asChild>
-              <Link to="/add">
-                <Plus className="h-4 w-4 mr-2" />
-                Add a Contract
-              </Link>
-            </Button>
-          </div>
+        {/* Search Results with Tabs when searching */}
+        {isSearching ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="contracts" className="gap-2">
+                <FileCode className="h-4 w-4" />
+                Contracts
+                {contractCount > 0 && (
+                  <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                    {contractCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Comments
+                {commentCount > 0 && (
+                  <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                    {commentCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="contracts">
+              {contractsLoading ? (
+                <div className="flex items-center justify-center h-48 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Searching contracts...
+                </div>
+              ) : filteredContracts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-center px-4">
+                  <p>No contracts match your search</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {filteredContracts.map((contract) => (
+                    <ContractExplorerCard
+                      key={contract.id}
+                      contract={contract}
+                      currentUserDid={currentUserId}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="comments">
+              {commentsLoading ? (
+                <div className="flex items-center justify-center h-48 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Searching comments...
+                </div>
+              ) : commentCount === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-center px-4">
+                  <p>No comments match your search</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {commentsData?.comments.map((comment) => (
+                    <StreamCard
+                      key={comment.uri}
+                      comment={comment}
+                      profile={commentsData.profiles[comment.authorDid]}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         ) : (
-          <div className="space-y-6">
-            {filteredContracts.map((contract) => (
-              <ContractExplorerCard
-                key={contract.id}
-                contract={contract}
-                currentUserDid={currentUserId}
-              />
-            ))}
-          </div>
+          /* Default Contract List (no search) */
+          contractsLoading && !contracts ? (
+            <div className="flex items-center justify-center h-48 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              Loading contracts...
+            </div>
+          ) : filteredContracts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-center px-4">
+              <p className="mb-4">
+                {contracts && contracts.length === 0
+                  ? "No contracts found"
+                  : "No contracts in this category"}
+              </p>
+              <Button variant="outline" asChild>
+                <Link to="/add">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add a Contract
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {filteredContracts.map((contract) => (
+                <ContractExplorerCard
+                  key={contract.id}
+                  contract={contract}
+                  currentUserDid={currentUserId}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>
