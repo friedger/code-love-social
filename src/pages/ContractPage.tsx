@@ -180,20 +180,16 @@ const ContractPage = () => {
               <RelatedContractsIcons contracts={relatedContracts} />
             )}
             
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-              <ContractViewer
-                ref={viewerRef}
-                contract={contract}
-                currentUserDid={user?.id}
-                initialSelectedLine={initialLine}
-                initialLineRange={initialRange}
-              />
-              {relatedContracts && relatedContracts.length > 0 && (
-                <aside className="space-y-4">
-                  <RelatedContractsList contracts={relatedContracts} />
-                </aside>
-              )}
-            </div>
+            <ContractViewer
+              ref={viewerRef}
+              contract={contract}
+              currentUserDid={user?.id}
+              initialSelectedLine={initialLine}
+              initialLineRange={initialRange}
+            />
+            {relatedContracts && relatedContracts.length > 0 && (
+              <RelatedContractsList contracts={relatedContracts} />
+            )}
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">
