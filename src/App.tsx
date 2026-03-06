@@ -8,6 +8,7 @@ import ContractPage from "./pages/ContractPage";
 import ProfilePage from "./pages/ProfilePage";
 import StreamPage from "./pages/StreamPage";
 import AddContractPage from "./pages/AddContractPage";
+import AuthorsPage from "./pages/AuthorsPage";
 import OAuthCallback from "./pages/OAuthCallback";
 import NotFound from "./pages/NotFound";
 
