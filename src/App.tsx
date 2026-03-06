@@ -26,6 +26,7 @@ const App = () => (
           <Route path="/contract/:contractId" element={<ContractPage />} />
           <Route path="/profile/:did" element={<ProfilePage />} />
           <Route path="/add-contract" element={<AddContractPage />} />
+          <Route path="/authors" element={<AuthorsPage />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
