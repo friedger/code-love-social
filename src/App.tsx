@@ -8,6 +8,7 @@ import ContractPage from "./pages/ContractPage";
 import ProfilePage from "./pages/ProfilePage";
 import StreamPage from "./pages/StreamPage";
 import AddContractPage from "./pages/AddContractPage";
+import AuthorsPage from "./pages/AuthorsPage";
 import OAuthCallback from "./pages/OAuthCallback";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/contract/:contractId" element={<ContractPage />} />
           <Route path="/profile/:did" element={<ProfilePage />} />
           <Route path="/add-contract" element={<AddContractPage />} />
+          <Route path="/authors" element={<AuthorsPage />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
