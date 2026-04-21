@@ -20,7 +20,7 @@ const Index = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("contracts");
-  const { user, isLoading: authLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, loginWithMatrix, logout } = useAuth();
+  const { user, isLoading: authLoading, hasNostrExtension, loginWithAtproto, loginWithNostr, logout } = useAuth();
   const { data: contracts, isLoading: contractsLoading, isFetching: contractsFetching } = useContracts(debouncedSearch);
   const { data: commentsData, isLoading: commentsLoading, isFetching: commentsFetching } = useSearchComments(debouncedSearch);
   const { data: categories } = useCategories();
@@ -87,7 +87,6 @@ const Index = () => {
               hasNostrExtension={hasNostrExtension}
               onLoginAtproto={loginWithAtproto}
               onLoginNostr={loginWithNostr}
-              onLoginMatrix={loginWithMatrix}
               onLogout={logout}
             />
           </div>

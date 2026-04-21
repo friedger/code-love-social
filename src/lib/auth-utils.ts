@@ -34,7 +34,7 @@ export function clearStoredToken(key: string): void {
 }
 
 // Auth type definitions for unified auth system
-export type AuthType = "atproto" | "nostr" | "matrix";
+export type AuthType = "atproto" | "nostr";
 
 export interface BaseUser {
   id: string;

@@ -17,8 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogIn, LogOut, User as UserIcon, Loader2, Zap, Grid3X3 } from "lucide-react";
-import { BlueskyLoginForm, NostrLoginForm, MatrixLoginForm } from "@/components/auth";
+import { LogIn, LogOut, User as UserIcon, Loader2, Zap } from "lucide-react";
+import { BlueskyLoginForm, NostrLoginForm } from "@/components/auth";
 import type { UnifiedUser } from "@/hooks/useAuth";
 
 interface AuthButtonProps {
@@ -27,19 +27,16 @@ interface AuthButtonProps {
   hasNostrExtension: boolean;
   onLoginAtproto: (handle: string) => Promise<void>;
   onLoginNostr: () => Promise<void>;
-  onLoginMatrix: (userId: string, password: string) => Promise<void>;
   onLogout: () => Promise<void>;
 }
 
 const AUTH_TYPE_LABELS: Record<string, string> = {
   atproto: "Bluesky",
   nostr: "Nostr",
-  matrix: "Matrix",
 };
 
 const AUTH_TYPE_ICONS: Record<string, React.ReactNode> = {
   nostr: <Zap className="h-3 w-3 text-amber-500" />,
-  matrix: <Grid3X3 className="h-3 w-3 text-green-500" />,
 };
 
 export function AuthButton({
@@ -48,7 +45,6 @@ export function AuthButton({
   hasNostrExtension,
   onLoginAtproto,
   onLoginNostr,
-  onLoginMatrix,
   onLogout,
 }: AuthButtonProps) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -68,16 +64,6 @@ export function AuthButton({
     setIsSubmitting(true);
     try {
       await onLoginNostr();
-      setShowLoginDialog(false);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleMatrixSubmit = async (userId: string, password: string) => {
-    setIsSubmitting(true);
-    try {
-      await onLoginMatrix(userId, password);
       setShowLoginDialog(false);
     } finally {
       setIsSubmitting(false);
@@ -154,15 +140,11 @@ export function AuthButton({
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="bluesky">Bluesky</TabsTrigger>
               <TabsTrigger value="nostr" className="gap-1">
                 <Zap className="h-3 w-3" />
                 Nostr
-              </TabsTrigger>
-              <TabsTrigger value="matrix" className="gap-1">
-                <Grid3X3 className="h-3 w-3" />
-                Matrix
               </TabsTrigger>
             </TabsList>
 
@@ -177,13 +159,6 @@ export function AuthButton({
               <NostrLoginForm
                 hasExtension={hasNostrExtension}
                 onLogin={handleNostrLogin}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-
-            <TabsContent value="matrix" className="mt-4">
-              <MatrixLoginForm
-                onSubmit={handleMatrixSubmit}
                 isSubmitting={isSubmitting}
               />
             </TabsContent>

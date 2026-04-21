@@ -1,21 +1,18 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtprotoAuth, type AtprotoUser } from "./useAtprotoAuth";
 import { useNostrAuth, type NostrUser } from "./useNostrAuth";
-import { useMatrixAuth, type MatrixUser } from "./useMatrixAuth";
 import type { AuthType } from "@/lib/auth-utils";
 
 export type { AuthType } from "@/lib/auth-utils";
 
 export interface UnifiedUser {
-  id: string; // DID for atproto, npub for nostr, userId for matrix
+  id: string; // DID for atproto, npub for nostr
   displayName: string;
   handle?: string; // Only for atproto
   avatar?: string;
   authType: AuthType;
-  // Original user objects for type-specific operations
   atprotoUser?: AtprotoUser;
   nostrUser?: NostrUser;
-  matrixUser?: MatrixUser;
 }
 
 interface UseAuthReturn {
@@ -27,29 +24,22 @@ interface UseAuthReturn {
   hasNostrExtension: boolean;
   loginWithAtproto: (handle: string) => Promise<void>;
   loginWithNostr: () => Promise<void>;
-  loginWithMatrix: (userId: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 export function useAuth(): UseAuthReturn {
   const atproto = useAtprotoAuth();
   const nostr = useNostrAuth();
-  const matrix = useMatrixAuth();
 
-  // Combine loading states
-  const isLoading = atproto.isLoading || nostr.isLoading || matrix.isLoading;
+  const isLoading = atproto.isLoading || nostr.isLoading;
 
-  // Combine errors (prefer showing the most recent error)
   const [activeError, setActiveError] = useState<string | null>(null);
-
   useEffect(() => {
     if (atproto.error) setActiveError(atproto.error);
     else if (nostr.error) setActiveError(nostr.error);
-    else if (matrix.error) setActiveError(matrix.error);
     else setActiveError(null);
-  }, [atproto.error, nostr.error, matrix.error]);
+  }, [atproto.error, nostr.error]);
 
-  // Determine the current user (prioritize the one that's logged in)
   const { user, authType } = useMemo((): {
     user: UnifiedUser | null;
     authType: AuthType | null;
@@ -81,54 +71,26 @@ export function useAuth(): UseAuthReturn {
       };
     }
 
-    if (matrix.user) {
-      return {
-        user: {
-          id: matrix.user.userId,
-          displayName: matrix.user.displayName,
-          avatar: matrix.user.avatar,
-          authType: "matrix",
-          matrixUser: matrix.user,
-        },
-        authType: "matrix",
-      };
-    }
-
     return { user: null, authType: null };
-  }, [atproto.user, nostr.user, matrix.user]);
+  }, [atproto.user, nostr.user]);
 
   const loginWithAtproto = useCallback(
     async (handle: string) => {
-      // Clear other sessions first
       if (nostr.isAuthenticated) nostr.logout();
-      if (matrix.isAuthenticated) await matrix.logout();
       await atproto.login(handle);
     },
-    [atproto, nostr, matrix]
+    [atproto, nostr],
   );
 
   const loginWithNostr = useCallback(async () => {
-    // Clear other sessions first
     if (atproto.isAuthenticated) await atproto.logout();
-    if (matrix.isAuthenticated) await matrix.logout();
     await nostr.login();
-  }, [atproto, nostr, matrix]);
-
-  const loginWithMatrix = useCallback(
-    async (userId: string, password: string) => {
-      // Clear other sessions first
-      if (atproto.isAuthenticated) await atproto.logout();
-      if (nostr.isAuthenticated) nostr.logout();
-      await matrix.login(userId, password);
-    },
-    [atproto, nostr, matrix]
-  );
+  }, [atproto, nostr]);
 
   const logout = useCallback(async () => {
     if (atproto.isAuthenticated) await atproto.logout();
     if (nostr.isAuthenticated) nostr.logout();
-    if (matrix.isAuthenticated) await matrix.logout();
-  }, [atproto, nostr, matrix]);
+  }, [atproto, nostr]);
 
   return {
     user,
@@ -139,9 +101,8 @@ export function useAuth(): UseAuthReturn {
     hasNostrExtension: nostr.hasExtension,
     loginWithAtproto,
     loginWithNostr,
-    loginWithMatrix,
     logout,
   };
 }
 
-export type { AtprotoUser, NostrUser, MatrixUser };
+export type { AtprotoUser, NostrUser };
