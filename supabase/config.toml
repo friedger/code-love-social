@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.ingest-atproto]
 verify_jwt = false
+
+[functions.admin-whitelist]
+verify_jwt = false
