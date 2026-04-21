@@ -101,6 +101,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_state: {
+        Row: {
+          cursor: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          cursor: string
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          cursor?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ingest_whitelist: {
+        Row: {
+          added_by: string | null
+          author_type: string
+          created_at: string
+          id: string
+          identifier: string
+          note: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          author_type: string
+          created_at?: string
+          id?: string
+          identifier: string
+          note?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          author_type?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       comments_index: {
         Row: {
           author_did: string
