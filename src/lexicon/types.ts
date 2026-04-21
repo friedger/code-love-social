@@ -79,12 +79,15 @@ export interface ReactionRecord {
  * This is the unified type used throughout the application
  */
 export interface Comment extends Omit<CommentRecord, '$type'> {
-  /** AT Protocol record URI */
+  /** AT Protocol record URI or Nostr event id (hex). */
   uri: string;
-  /** AT Protocol Content ID */
+  /** AT Protocol Content ID. Empty string for Nostr-authored comments. */
   cid: string;
-  /** DID of the comment author */
+  /** DID of the comment author (AT Protocol DID or did:pubkey:<hex> for Nostr). */
   authorDid: string;
+  /** Which protocol the comment was authored under. Determines whether a
+   *  viewer can reply to / react to it from their current session. */
+  authorType: "atproto" | "nostr";
   /** Aggregated reaction counts by emoji */
   reactions: Record<string, number>;
   /** User's own reaction emoji and URI (if any) */

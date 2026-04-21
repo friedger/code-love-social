@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import type { Comment } from "@/lexicon/types";
 import { ReactionPicker } from "./ReactionPicker";
+import { canInteractWith, crossProtocolMessage, type AuthType } from "@/lib/auth-utils";
 
 interface CommentThreadProps {
   contractId: string;
@@ -17,11 +18,12 @@ interface CommentThreadProps {
   txId: string;
   lineNumber: number;
   currentUserDid?: string;
+  currentUserAuthType?: AuthType | null;
   onClose: () => void;
   isInDrawer?: boolean;
 }
 
-export function CommentThread({ contractId, principal, txId, lineNumber, currentUserDid, onClose, isInDrawer = false }: CommentThreadProps) {
+export function CommentThread({ contractId, principal, txId, lineNumber, currentUserDid, currentUserAuthType, onClose, isInDrawer = false }: CommentThreadProps) {
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
   const [copied, setCopied] = useState(false);
@@ -118,6 +120,7 @@ export function CommentThread({ contractId, principal, txId, lineNumber, current
               allComments={allComments}
               profiles={profiles}
               currentUserDid={currentUserDid}
+              currentUserAuthType={currentUserAuthType}
               onReply={(uri, cid, rkey) => setReplyTo({ uri, cid, rkey })}
               depth={0}
             />
@@ -182,21 +185,27 @@ interface CommentCardProps {
   allComments: Comment[];
   profiles: Record<string, ProfileData>;
   currentUserDid?: string;
+  currentUserAuthType?: AuthType | null;
   onReply: (uri: string, cid: string, rkey: string) => void;
   depth: number;
 }
 
-function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, depth }: CommentCardProps) {
+function CommentCard({ comment, allComments, profiles, currentUserDid, currentUserAuthType, onReply, depth }: CommentCardProps) {
   const profile = profiles[comment.authorDid];
   const replies = getRepliesFromComments(allComments, extractRkeyFromUri(comment.uri) || "");
   const reactions = comment.reactions || {};
   const userReaction = comment.userReaction;
 
   const toggleReactionMutation = useToggleCommentReaction();
+  const canInteract = canInteractWith(currentUserAuthType, comment.authorType);
 
   const handleReaction = (emoji: string) => {
     if (!currentUserDid) {
       toast.error("Sign in to react");
+      return;
+    }
+    if (!canInteract) {
+      toast.error(crossProtocolMessage(comment.authorType));
       return;
     }
 
@@ -210,6 +219,10 @@ function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, 
   };
 
   const handleReply = () => {
+    if (!canInteract) {
+      toast.error(crossProtocolMessage(comment.authorType));
+      return;
+    }
     const rkey = extractRkeyFromUri(comment.uri) || "";
     onReply(comment.uri, comment.cid, rkey);
   };
@@ -244,10 +257,15 @@ function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, 
             reactions={reactions}
             userReaction={userReaction}
             onReact={handleReaction}
-            disabled={!currentUserDid || toggleReactionMutation.isPending}
+            disabled={!currentUserDid || !canInteract || toggleReactionMutation.isPending}
             size="sm"
           />
-          <button className="flex items-center gap-1 text-xs hover:text-primary" onClick={handleReply}>
+          <button
+            className="flex items-center gap-1 text-xs hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={handleReply}
+            disabled={!!currentUserDid && !canInteract}
+            title={currentUserDid && !canInteract ? crossProtocolMessage(comment.authorType) : undefined}
+          >
             <MessageCircle className="h-3 w-3" />
             Reply
           </button>
@@ -263,6 +281,7 @@ function CommentCard({ comment, allComments, profiles, currentUserDid, onReply, 
               allComments={allComments}
               profiles={profiles}
               currentUserDid={currentUserDid}
+              currentUserAuthType={currentUserAuthType}
               onReply={onReply}
               depth={depth + 1}
             />

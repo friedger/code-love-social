@@ -184,6 +184,7 @@ const ContractPage = () => {
               ref={viewerRef}
               contract={contract}
               currentUserDid={user?.id}
+              currentUserAuthType={user?.authType ?? null}
               initialSelectedLine={initialLine}
               initialLineRange={initialRange}
             />

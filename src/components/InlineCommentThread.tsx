@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import type { Comment } from "@/lexicon/types";
 import { ReactionPicker } from "./ReactionPicker";
+import { canInteractWith, crossProtocolMessage, type AuthType } from "@/lib/auth-utils";
 
 interface InlineCommentThreadProps {
   contractId: string;
@@ -16,10 +17,11 @@ interface InlineCommentThreadProps {
   txId: string;
   lineNumber: number;
   currentUserDid?: string;
+  currentUserAuthType?: AuthType | null;
   onClose: () => void;
 }
 
-export function InlineCommentThread({ contractId, principal, txId, lineNumber, currentUserDid, onClose }: InlineCommentThreadProps) {
+export function InlineCommentThread({ contractId, principal, txId, lineNumber, currentUserDid, currentUserAuthType, onClose }: InlineCommentThreadProps) {
   const [replyTo, setReplyTo] = useState<{ uri: string; cid: string; rkey: string } | null>(null);
   const [newComment, setNewComment] = useState("");
   const [copied, setCopied] = useState(false);
@@ -96,6 +98,7 @@ export function InlineCommentThread({ contractId, principal, txId, lineNumber, c
               allComments={allComments}
               profiles={profiles}
               currentUserDid={currentUserDid}
+              currentUserAuthType={currentUserAuthType}
               onReply={(uri, cid, rkey) => setReplyTo({ uri, cid, rkey })}
               depth={0}
             />
@@ -144,19 +147,22 @@ interface InlineCommentCardProps {
   allComments: Comment[];
   profiles: Record<string, ProfileData>;
   currentUserDid?: string;
+  currentUserAuthType?: AuthType | null;
   onReply: (uri: string, cid: string, rkey: string) => void;
   depth: number;
 }
 
-function InlineCommentCard({ comment, allComments, profiles, currentUserDid, onReply, depth }: InlineCommentCardProps) {
+function InlineCommentCard({ comment, allComments, profiles, currentUserDid, currentUserAuthType, onReply, depth }: InlineCommentCardProps) {
   const profile = profiles[comment.authorDid];
   const replies = getRepliesFromComments(allComments, extractRkeyFromUri(comment.uri) || "");
   const reactions = comment.reactions || {};
   const userReaction = comment.userReaction;
   const toggleReactionMutation = useToggleCommentReaction();
+  const canInteract = canInteractWith(currentUserAuthType, comment.authorType);
 
   const handleReaction = (emoji: string) => {
     if (!currentUserDid) { toast.error("Sign in to react"); return; }
+    if (!canInteract) { toast.error(crossProtocolMessage(comment.authorType)); return; }
     toggleReactionMutation.mutate({
       uri: comment.uri, cid: comment.cid, emoji,
       currentUserReactionUri: userReaction?.uri, currentUserEmoji: userReaction?.emoji,
@@ -164,6 +170,7 @@ function InlineCommentCard({ comment, allComments, profiles, currentUserDid, onR
   };
 
   const handleReply = () => {
+    if (!canInteract) { toast.error(crossProtocolMessage(comment.authorType)); return; }
     onReply(comment.uri, comment.cid, extractRkeyFromUri(comment.uri) || "");
   };
 
@@ -190,10 +197,15 @@ function InlineCommentCard({ comment, allComments, profiles, currentUserDid, onR
           <ReactionPicker
             reactions={reactions} userReaction={userReaction}
             onReact={handleReaction}
-            disabled={!currentUserDid || toggleReactionMutation.isPending}
+            disabled={!currentUserDid || !canInteract || toggleReactionMutation.isPending}
             size="sm"
           />
-          <button className="flex items-center gap-1 text-[10px] hover:text-primary" onClick={handleReply}>
+          <button
+            className="flex items-center gap-1 text-[10px] hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={handleReply}
+            disabled={!!currentUserDid && !canInteract}
+            title={currentUserDid && !canInteract ? crossProtocolMessage(comment.authorType) : undefined}
+          >
             <MessageCircle className="h-2.5 w-2.5" /> Reply
           </button>
         </div>
@@ -202,7 +214,8 @@ function InlineCommentCard({ comment, allComments, profiles, currentUserDid, onR
         <div className="mt-2 space-y-2">
           {replies.map((reply) => (
             <InlineCommentCard key={reply.uri} comment={reply} allComments={allComments}
-              profiles={profiles} currentUserDid={currentUserDid} onReply={onReply} depth={depth + 1} />
+              profiles={profiles} currentUserDid={currentUserDid} currentUserAuthType={currentUserAuthType}
+              onReply={onReply} depth={depth + 1} />
           ))}
         </div>
       )}

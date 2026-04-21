@@ -11,14 +11,16 @@ import { ContractIdenticon } from "./ContractIdenticon";
 import { formatContractId, getContractPath, getExplorerContractUrl } from "@/lib/utils";
 import { ReactionPicker } from "./ReactionPicker";
 import { useToggleCommentReaction } from "@/hooks/useCommentReactions";
+import { canInteractWith, crossProtocolMessage, type AuthType } from "@/lib/auth-utils";
 
 interface StreamCardProps {
   comment: Comment;
   profile?: ProfileData;
   currentUserDid?: string;
+  currentUserAuthType?: AuthType | null;
 }
 
-export function StreamCard({ comment, profile, currentUserDid }: StreamCardProps) {
+export function StreamCard({ comment, profile, currentUserDid, currentUserAuthType }: StreamCardProps) {
   const contractPath = getContractPath(comment.subject.principal, comment.subject.contractName);
   const sourceHash = comment.subject.sourceHash;
   const isReply = !!comment.parentId;
@@ -26,10 +28,15 @@ export function StreamCard({ comment, profile, currentUserDid }: StreamCardProps
   const userReaction = comment.userReaction;
 
   const toggleReactionMutation = useToggleCommentReaction();
+  const canInteract = canInteractWith(currentUserAuthType, comment.authorType);
 
   const handleReaction = (emoji: string) => {
     if (!currentUserDid) {
       toast.error("Sign in to react");
+      return;
+    }
+    if (!canInteract) {
+      toast.error(crossProtocolMessage(comment.authorType));
       return;
     }
 
@@ -128,7 +135,7 @@ export function StreamCard({ comment, profile, currentUserDid }: StreamCardProps
             reactions={reactions}
             userReaction={userReaction}
             onReact={handleReaction}
-            disabled={!currentUserDid || toggleReactionMutation.isPending}
+            disabled={!currentUserDid || !canInteract || toggleReactionMutation.isPending}
           />
 
           <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" asChild>

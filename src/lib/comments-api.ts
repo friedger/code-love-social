@@ -279,6 +279,7 @@ export function indexRowToComment(
       txId: row.tx_id || "", // Default to empty for legacy comments
     },
     authorDid: row.author_did,
+    authorType: row.author_type ?? "atproto",
     text: row.text,
     createdAt: row.created_at,
     reactions,

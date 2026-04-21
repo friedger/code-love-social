@@ -9,10 +9,12 @@ import { ContractComments, type ContractCommentsRef } from "./ContractComments";
 import { InlineCommentThread } from "./InlineCommentThread";
 import { HighlightedCodeLine } from "./HighlightedCodeLine";
 import type { Comment } from "@/lexicon/types";
+import type { AuthType } from "@/lib/auth-utils";
 
 interface ContractViewerProps {
   contract: Contract;
   currentUserDid?: string;
+  currentUserAuthType?: AuthType | null;
   initialSelectedLine?: number;
   initialLineRange?: { start: number; end: number };
 }
@@ -25,6 +27,7 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
   function ContractViewer({
     contract,
     currentUserDid,
+    currentUserAuthType,
     initialSelectedLine,
     initialLineRange,
   }, ref) {
@@ -182,6 +185,7 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
                         txId={contract.tx_id || ""}
                         lineNumber={lineNum}
                         currentUserDid={currentUserDid}
+                        currentUserAuthType={currentUserAuthType}
                         onClose={() => setSelectedLine(null)}
                       />
                     </div>
@@ -201,6 +205,7 @@ export const ContractViewer = forwardRef<ContractViewerRef, ContractViewerProps>
           principal={contract.principal}
           txId={contract.tx_id || ""}
           currentUserDid={currentUserDid}
+          currentUserAuthType={currentUserAuthType}
         />
       </div>
     </div>

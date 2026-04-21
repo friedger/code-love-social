@@ -136,6 +136,7 @@ const StreamPage = () => {
                 comment={comment}
                 profile={profiles?.[comment.authorDid]}
                 currentUserDid={user?.id}
+                currentUserAuthType={user?.authType ?? null}
               />
             ))}
           </div>

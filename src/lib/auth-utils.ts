@@ -36,6 +36,27 @@ export function clearStoredToken(key: string): void {
 // Auth type definitions for unified auth system
 export type AuthType = "atproto" | "nostr";
 
+/**
+ * Can a viewer with `viewerAuthType` (null if not signed in) interact with
+ * content authored under `contentAuthType`? Cross-protocol writes aren't
+ * supported: a Nostr user can't produce a valid NIP-22 reply to an at:// URI
+ * because the parent id would have to be a 64-char hex event id; and an
+ * atproto user can't produce a NIP-25 reaction. Reading across protocols
+ * is fine — this only gates write intents (reply, react, delete).
+ */
+export function canInteractWith(
+  viewerAuthType: AuthType | null | undefined,
+  contentAuthType: AuthType,
+): boolean {
+  if (!viewerAuthType) return false;
+  return viewerAuthType === contentAuthType;
+}
+
+export function crossProtocolMessage(contentAuthType: AuthType): string {
+  const target = contentAuthType === "atproto" ? "Bluesky" : "Nostr";
+  return `Sign in with ${target} to interact with this comment`;
+}
+
 export interface BaseUser {
   id: string;
   displayName: string;

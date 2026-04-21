@@ -47,6 +47,7 @@ const Index = () => {
 
   // Get user ID based on auth type
   const currentUserId = user?.id;
+  const currentUserAuthType = user?.authType ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,6 +184,8 @@ const Index = () => {
                       key={comment.uri}
                       comment={comment}
                       profile={commentsData.profiles[comment.authorDid]}
+                      currentUserDid={currentUserId}
+                      currentUserAuthType={currentUserAuthType}
                     />
                   ))}
                 </div>
