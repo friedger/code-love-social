@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.ingest-nostr]
 verify_jwt = false
+
+[functions.ingest-atproto]
+verify_jwt = false
