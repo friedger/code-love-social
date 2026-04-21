@@ -147,7 +147,6 @@ describe('Conversion helpers', () => {
 
       const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:author1',
-        authorType: "atproto",
         uri: 'at://did:plc:author1/com.source-of-clarity.temp.comment/abc',
         cid: 'bafyrei123',
         reactions: { '👍': 10, '🔥': 2 },
@@ -187,7 +186,6 @@ describe('Conversion helpers', () => {
 
       const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:replier',
-        authorType: "atproto",
         uri: 'at://did:plc:replier/com.source-of-clarity.temp.comment/reply',
         cid: 'bafyreireply',
         parentId: 'parent-local-id',
@@ -212,7 +210,6 @@ describe('Conversion helpers', () => {
 
       const comment = fromCommentRecord(record, {
         authorDid: 'did:plc:test',
-        authorType: "atproto",
         uri: 'at://did:plc:test/com.source-of-clarity.temp.comment/x',
         cid: 'cid',
       });
