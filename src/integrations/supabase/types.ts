@@ -104,7 +104,6 @@ export type Database = {
       comments_index: {
         Row: {
           author_did: string
-          author_type: string
           cid: string
           contract_name: string
           created_at: string | null
@@ -120,7 +119,6 @@ export type Database = {
         }
         Insert: {
           author_did: string
-          author_type?: string
           cid: string
           contract_name: string
           created_at?: string | null
@@ -136,7 +134,6 @@ export type Database = {
         }
         Update: {
           author_did?: string
-          author_type?: string
           cid?: string
           contract_name?: string
           created_at?: string | null
@@ -200,7 +197,6 @@ export type Database = {
       likes_index: {
         Row: {
           author_did: string
-          author_type: string
           cid: string
           created_at: string | null
           emoji: string
@@ -211,7 +207,6 @@ export type Database = {
         }
         Insert: {
           author_did: string
-          author_type?: string
           cid: string
           created_at?: string | null
           emoji?: string
@@ -222,7 +217,6 @@ export type Database = {
         }
         Update: {
           author_did?: string
-          author_type?: string
           cid?: string
           created_at?: string | null
           emoji?: string
