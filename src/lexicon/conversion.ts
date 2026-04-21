@@ -61,6 +61,7 @@ export function fromCommentRecord(
     cid: options.cid,
     subject: record.subject,
     authorDid: options.authorDid,
+    authorType: "atproto",
     text: record.text,
     createdAt: record.createdAt,
     reactions: options.reactions ?? {},
