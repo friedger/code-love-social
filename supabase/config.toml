@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.add-contract]
 verify_jwt = false
+
+[functions.ingest-nostr]
+verify_jwt = false
