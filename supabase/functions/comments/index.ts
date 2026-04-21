@@ -7,12 +7,23 @@ import {
   refreshAccessToken,
   type SessionData 
 } from "../_shared/atproto-agent.ts";
-import { 
-  checkRateLimit, 
-  getClientIP, 
-  rateLimitResponse, 
-  RATE_LIMITS 
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  RATE_LIMITS
 } from "../_shared/rate-limiter.ts";
+import {
+  assertValidSignedEvent,
+  findTag,
+  findTagValue,
+  KIND_COMMENT as NOSTR_KIND_COMMENT,
+  KIND_DELETION as NOSTR_KIND_DELETION,
+  KIND_REACTION as NOSTR_KIND_REACTION,
+  pubkeyToDid,
+  readStacksTxIdFromRoot,
+  type NostrEvent,
+} from "../_shared/nostr.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -255,6 +266,203 @@ function validateCommentInput(body: unknown): {
     lineRange: obj.lineRange as { start: number; end: number } | undefined,
     reply: obj.reply as { root: { uri: string; cid: string }; parent: { uri: string; cid: string } } | undefined,
   };
+}
+
+// ============= Nostr route helpers =============
+//
+// Signed-event intake for comments, reactions, and deletions.
+// POSTs:
+//   /comments/nostr                     — new kind-1111 comment
+//   /comments/nostr/reaction            — kind-7 reaction on a comment
+//   /comments/nostr/contract-reaction   — kind-7 reaction on a contract root
+//   /comments/nostr/delete              — kind-5 deletion of a prior event
+//
+// Request body is always `{ event: <signed NostrEvent>, ...extra }`.
+// Extra fields carry data the event can't: principal + contractName on
+// new comments (the event only has the Stacks deploy tx id in its
+// NIP-73 root tag).
+
+const CONTRACT_SUBJECT_PREFIX = "contract://";
+
+function jsonResp(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function parseLineTags(tags: string[][]): {
+  lineNumber?: number;
+  lineRange?: { start: number; end: number };
+} {
+  const line = findTagValue(tags, "line");
+  if (line) {
+    const n = Number(line);
+    if (Number.isInteger(n) && n >= 1) return { lineNumber: n };
+  }
+  const lines = findTag(tags, "lines");
+  if (lines && lines.length >= 3) {
+    const start = Number(lines[1]);
+    const end = Number(lines[2]);
+    if (Number.isInteger(start) && Number.isInteger(end) && start >= 1 && end >= start) {
+      return { lineRange: { start, end } };
+    }
+  }
+  return {};
+}
+
+async function indexNostrComment(
+  event: NostrEvent,
+  principal: string,
+  contractName: string,
+) {
+  const txId = readStacksTxIdFromRoot(event.tags);
+  if (!txId) throw new Error("Missing stacks:tx root reference on event");
+  if (!event.content || event.content.length > 10000) {
+    throw new Error("Invalid comment content length");
+  }
+  const { lineNumber, lineRange } = parseLineTags(event.tags);
+  const parentId = findTagValue(event.tags, "e") || null;
+
+  const { error } = await supabase.from("comments_index").insert({
+    uri: event.id,
+    cid: event.id,
+    author_did: pubkeyToDid(event.pubkey),
+    author_type: "nostr",
+    principal,
+    contract_name: contractName,
+    tx_id: txId,
+    line_number: lineNumber ?? null,
+    line_range_start: lineRange?.start ?? null,
+    line_range_end: lineRange?.end ?? null,
+    parent_uri: parentId,
+    text: event.content,
+    created_at: new Date(event.created_at * 1000).toISOString(),
+  });
+  if (error && !String(error.message).toLowerCase().includes("duplicate")) {
+    console.error("Nostr comment index insert error:", error);
+    throw new Error("Failed to index comment");
+  }
+}
+
+async function indexNostrReaction(event: NostrEvent) {
+  const emoji = event.content;
+  if (!emoji || emoji.length > 10) throw new Error("Invalid reaction emoji");
+  const targetEventId = findTagValue(event.tags, "e");
+  const externalTxId = readStacksTxIdFromRoot(event.tags);
+  let subjectUri: string;
+  if (targetEventId) {
+    subjectUri = targetEventId;
+  } else if (externalTxId) {
+    subjectUri = `${CONTRACT_SUBJECT_PREFIX}${externalTxId}`;
+  } else {
+    throw new Error("Reaction must target an e-tag event or a stacks:tx root");
+  }
+
+  // Replace any prior reaction by this author on the same subject.
+  await supabase
+    .from("likes_index")
+    .delete()
+    .eq("author_did", pubkeyToDid(event.pubkey))
+    .eq("subject_uri", subjectUri);
+
+  const { error } = await supabase.from("likes_index").insert({
+    uri: event.id,
+    cid: event.id,
+    author_did: pubkeyToDid(event.pubkey),
+    author_type: "nostr",
+    subject_uri: subjectUri,
+    subject_cid: "",
+    emoji,
+  });
+  if (error && !String(error.message).toLowerCase().includes("duplicate")) {
+    console.error("Nostr reaction index insert error:", error);
+    throw new Error("Failed to index reaction");
+  }
+  return subjectUri;
+}
+
+async function indexNostrDeletion(event: NostrEvent) {
+  const authorDid = pubkeyToDid(event.pubkey);
+  const targetIds = event.tags
+    .filter((t) => t[0] === "e")
+    .map((t) => t[1])
+    .filter(Boolean);
+  if (targetIds.length === 0) return { deleted: 0 };
+
+  // Only rows authored by the same pubkey can be deleted — that's the
+  // whole authorisation check for Nostr deletions.
+  const [{ error: cErr }, { error: lErr }] = await Promise.all([
+    supabase
+      .from("comments_index")
+      .delete()
+      .eq("author_did", authorDid)
+      .eq("author_type", "nostr")
+      .in("uri", targetIds),
+    supabase
+      .from("likes_index")
+      .delete()
+      .eq("author_did", authorDid)
+      .eq("author_type", "nostr")
+      .in("uri", targetIds),
+  ]);
+  if (cErr) console.error("Nostr delete comments error:", cErr);
+  if (lErr) console.error("Nostr delete reactions error:", lErr);
+  return { deleted: targetIds.length };
+}
+
+/** Route `/comments/nostr[/...]` POST requests. Returns null if unhandled. */
+async function handleNostrPost(
+  req: Request,
+  subPath: string[],
+): Promise<Response | null> {
+  const body = await req.json().catch(() => ({} as Record<string, unknown>));
+  const event = assertValidSignedEvent((body as { event?: unknown }).event);
+
+  // POST /comments/nostr — a kind-1111 comment
+  if (subPath.length === 0) {
+    if (event.kind !== NOSTR_KIND_COMMENT) {
+      return jsonResp({ error: `Expected kind ${NOSTR_KIND_COMMENT}` }, 400);
+    }
+    const principal = (body as { principal?: unknown }).principal;
+    const contractName = (body as { contractName?: unknown }).contractName;
+    if (typeof principal !== "string" || typeof contractName !== "string") {
+      return jsonResp({ error: "Missing principal or contractName" }, 400);
+    }
+    await indexNostrComment(event, principal, contractName);
+    return jsonResp({
+      uri: event.id,
+      cid: event.id,
+      rkey: event.id,
+      authorType: "nostr",
+      authorDid: pubkeyToDid(event.pubkey),
+      createdAt: new Date(event.created_at * 1000).toISOString(),
+    });
+  }
+
+  // POST /comments/nostr/reaction — kind-7 reaction on a comment
+  // POST /comments/nostr/contract-reaction — kind-7 reaction on a contract
+  if (
+    subPath.length === 1 &&
+    (subPath[0] === "reaction" || subPath[0] === "contract-reaction")
+  ) {
+    if (event.kind !== NOSTR_KIND_REACTION) {
+      return jsonResp({ error: `Expected kind ${NOSTR_KIND_REACTION}` }, 400);
+    }
+    await indexNostrReaction(event);
+    return jsonResp({ uri: event.id, cid: event.id, rkey: event.id });
+  }
+
+  // POST /comments/nostr/delete — kind-5 deletion
+  if (subPath.length === 1 && subPath[0] === "delete") {
+    if (event.kind !== NOSTR_KIND_DELETION) {
+      return jsonResp({ error: `Expected kind ${NOSTR_KIND_DELETION}` }, 400);
+    }
+    const result = await indexNostrDeletion(event);
+    return jsonResp({ ...result });
+  }
+
+  return jsonResp({ error: "Unknown /comments/nostr route" }, 404);
 }
 
 serve(async (req) => {
@@ -900,6 +1108,18 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ============== Nostr-signed routes ==============
+    //
+    // Instead of holding a server-side session for Nostr users (the private
+    // key lives only in the browser extension), the client signs a Nostr
+    // event and POSTs it here. The backend verifies the signature and
+    // indexes the row. No relay publication happens server-side — that's
+    // the browser's job. The atproto paths above are unchanged.
+    if (req.method === "POST" && pathParts[0] === "comments" && pathParts[1] === "nostr") {
+      const nostrResult = await handleNostrPost(req, pathParts.slice(2));
+      if (nostrResult) return nostrResult;
     }
 
     return new Response(JSON.stringify({ error: "Not Found" }), {

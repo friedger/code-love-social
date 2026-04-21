@@ -1,7 +1,20 @@
 import { getSessionToken } from "./atproto-auth";
+import { getNostrSession, getNostrRelay, signEvent as nostrSignEvent } from "./nostr-auth";
 import type { ContractRef, LineRange, ReplyRef, Comment } from "@/lexicon/types";
+import {
+  buildCommentEventTemplate,
+  buildReactionEventTemplate,
+  EXTERNAL_ID_STACKS_TX,
+  KIND_REACTION,
+  stacksTxExternalId,
+  TAG_I_UPPER,
+  TAG_K_UPPER,
+  type EventTemplate,
+  type NostrEvent,
+} from "@/lexicon/nostr";
 
 const COMMENTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/comments`;
+const NOSTR_COMMENTS_URL = `${COMMENTS_URL}/nostr`;
 
 export interface CreateCommentParams {
   subject: ContractRef;
@@ -94,6 +107,158 @@ function getAuthHeaders(): HeadersInit {
     "Content-Type": "application/json",
     Authorization: `Bearer ${sessionToken}`,
   };
+}
+
+/* ================================================================== *
+ *  Nostr write path
+ *
+ *  When a Nostr session is active, comments/reactions/deletions are
+ *  signed in the browser (via `window.nostr` or a persisted signer) and
+ *  POSTed to `/comments/nostr[/...]`. The backend verifies the event
+ *  signature and writes the index row with `author_type='nostr'`.
+ *  Atproto sessions keep their existing paths unchanged.
+ * ================================================================== */
+
+function isNostrSession(): boolean {
+  return !!getNostrSession();
+}
+
+/** Convert an AT-style ReplyRef to the Nostr EventRef shape. */
+function replyRefToNostr(reply: ReplyRef | undefined) {
+  if (!reply) return undefined;
+  return {
+    root: { id: reply.root.uri },
+    parent: { id: reply.parent.uri },
+  };
+}
+
+/**
+ * Fire-and-forget publish of a signed event to the configured relay.
+ * We don't block the UI on this — the index write is the authoritative step.
+ */
+function publishToNostrRelay(event: NostrEvent): void {
+  try {
+    const ws = new WebSocket(getNostrRelay());
+    ws.onopen = () => {
+      ws.send(JSON.stringify(["EVENT", event]));
+      setTimeout(() => ws.close(), 2000);
+    };
+    ws.onerror = () => ws.close();
+  } catch (err) {
+    console.warn("Nostr relay publish failed:", err);
+  }
+}
+
+async function postSignedEvent(
+  path: string,
+  event: NostrEvent,
+  extra: Record<string, unknown> = {},
+  errorMessage = "Request failed",
+) {
+  const response = await fetch(`${NOSTR_COMMENTS_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, ...extra }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error((error as { error?: string }).error || errorMessage);
+  }
+  return response.json();
+}
+
+async function signTemplate(template: EventTemplate): Promise<NostrEvent> {
+  const signed = await nostrSignEvent(template);
+  return signed as unknown as NostrEvent;
+}
+
+async function createNostrComment(
+  params: CreateCommentParams,
+): Promise<CreateCommentResponse> {
+  const template = buildCommentEventTemplate(params.subject, params.text, {
+    lineNumber: params.lineNumber,
+    lineRange: params.lineRange,
+    reply: replyRefToNostr(params.reply),
+  });
+  const event = await signTemplate(template);
+  const result = await postSignedEvent(
+    "",
+    event,
+    {
+      principal: params.subject.principal,
+      contractName: params.subject.contractName,
+    },
+    "Failed to create comment",
+  );
+  publishToNostrRelay(event);
+  return {
+    uri: event.id,
+    cid: event.id,
+    rkey: event.id,
+    subject: params.subject,
+    text: params.text,
+    lineNumber: params.lineNumber,
+    lineRange: params.lineRange,
+    reply: params.reply,
+    createdAt: (result as { createdAt?: string }).createdAt
+      ?? new Date(event.created_at * 1000).toISOString(),
+  };
+}
+
+async function addNostrReaction(
+  targetEventId: string,
+  targetPubkey: string,
+  emoji: string,
+): Promise<ReactionResponse> {
+  const template = buildReactionEventTemplate(
+    { id: targetEventId, pubkey: targetPubkey },
+    emoji,
+  );
+  const event = await signTemplate(template);
+  await postSignedEvent("/reaction", event, {}, "Failed to add reaction");
+  publishToNostrRelay(event);
+  return { uri: event.id, cid: event.id, rkey: event.id };
+}
+
+async function addNostrContractReaction(
+  txId: string,
+  emoji: string,
+): Promise<{ uri: string }> {
+  // A contract-level reaction has no target event; it scopes to the same
+  // NIP-73 Stacks deploy-tx root that comments use.
+  const template: EventTemplate = {
+    kind: KIND_REACTION,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      [TAG_I_UPPER, stacksTxExternalId(txId)],
+      [TAG_K_UPPER, EXTERNAL_ID_STACKS_TX],
+    ],
+    content: emoji,
+  };
+  const event = await signTemplate(template);
+  await postSignedEvent(
+    "/contract-reaction",
+    event,
+    {},
+    "Failed to add contract reaction",
+  );
+  publishToNostrRelay(event);
+  return { uri: event.id };
+}
+
+async function publishNostrDeletion(
+  eventId: string,
+  errorMessage: string,
+): Promise<void> {
+  const template: EventTemplate = {
+    kind: 5,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [["e", eventId]],
+    content: "",
+  };
+  const event = await signTemplate(template);
+  await postSignedEvent("/delete", event, {}, errorMessage);
+  publishToNostrRelay(event);
 }
 
 /**
@@ -264,9 +429,14 @@ export async function searchComments(query: string, limit = 50): Promise<Comment
 }
 
 /**
- * Create a new comment
+ * Create a new comment. Dispatches to the Nostr signed-event path when the
+ * active session is Nostr; falls back to the atproto BFF path otherwise.
  */
 export async function createComment(params: CreateCommentParams): Promise<CreateCommentResponse> {
+  if (isNostrSession()) {
+    return createNostrComment(params);
+  }
+
   const response = await fetch(COMMENTS_URL, {
     method: "POST",
     headers: getAuthHeaders(),
@@ -290,9 +460,19 @@ export async function createComment(params: CreateCommentParams): Promise<Create
 }
 
 /**
- * Add a reaction to a comment
+ * Add a reaction to a comment.
+ *
+ * For Nostr sessions, `uri` is the target event id (hex) and `cid` is
+ * repurposed to carry the target author's pubkey (also hex) so the client
+ * can build a NIP-25 `p` tag. Callers that already use hex event ids (all
+ * Nostr-authored comments) can pass `comment.pubkey` as the `cid`
+ * argument. For atproto sessions, `uri` / `cid` keep their AT meanings.
  */
 export async function addReaction(uri: string, cid: string, emoji: string): Promise<ReactionResponse> {
+  if (isNostrSession()) {
+    return addNostrReaction(uri, cid, emoji);
+  }
+
   const response = await fetch(`${COMMENTS_URL}/reaction`, {
     method: "POST",
     headers: getAuthHeaders(),
@@ -308,9 +488,17 @@ export async function addReaction(uri: string, cid: string, emoji: string): Prom
 }
 
 /**
- * Remove a reaction from a comment
+ * Remove a reaction from a comment.
+ *
+ * Nostr uses NIP-09 kind-5 deletion events; atproto does a direct
+ * `deleteRecord`. `reactionUri` is the Nostr event id for Nostr sessions
+ * or the at:// URI of the reaction record for atproto sessions.
  */
 export async function removeReaction(reactionUri: string): Promise<void> {
+  if (isNostrSession()) {
+    return publishNostrDeletion(reactionUri, "Failed to remove reaction");
+  }
+
   const response = await fetch(`${COMMENTS_URL}/reaction?uri=${encodeURIComponent(reactionUri)}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
@@ -333,9 +521,14 @@ export async function unlikeComment(likeUri: string): Promise<void> {
 }
 
 /**
- * Delete a comment
+ * Delete a comment. For Nostr sessions, `rkey` is the comment event id
+ * and deletion is published as a NIP-09 kind-5 event.
  */
 export async function deleteComment(rkey: string): Promise<void> {
+  if (isNostrSession()) {
+    return publishNostrDeletion(rkey, "Failed to delete comment");
+  }
+
   const response = await fetch(`${COMMENTS_URL}/${rkey}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
@@ -377,7 +570,9 @@ export async function getContractReactions(
 }
 
 /**
- * Add a reaction to a contract (not a comment)
+ * Add a reaction to a contract (not a comment). For Nostr this requires
+ * a txId so the event can carry the NIP-73 stacks:tx root; atproto has no
+ * such requirement.
  */
 export async function addContractReaction(
   principal: string,
@@ -385,6 +580,13 @@ export async function addContractReaction(
   txId: string | undefined,
   emoji: string
 ): Promise<{ uri?: string; removed?: boolean }> {
+  if (isNostrSession()) {
+    if (!txId) {
+      throw new Error("Contract reactions on Nostr require a deploy txId");
+    }
+    return addNostrContractReaction(txId, emoji);
+  }
+
   const response = await fetch(`${COMMENTS_URL}/contract-reaction`, {
     method: "POST",
     headers: getAuthHeaders(),
