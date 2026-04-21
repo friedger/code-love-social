@@ -44,11 +44,16 @@ export interface CommentsWithProfiles {
   profiles: Record<string, ProfileData>;
 }
 
+export type AuthorType = "atproto" | "nostr";
+
 export interface CommentIndexRow {
   id: string;
   uri: string;
   cid: string;
   author_did: string;
+  /** Which protocol this comment came from. Rows written before this column
+   *  existed are backfilled as "atproto". */
+  author_type: AuthorType;
   principal: string;
   contract_name: string;
   tx_id: string | null;
