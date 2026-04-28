@@ -3,6 +3,7 @@ import { useLineComments, useCreateComment, getRepliesFromComments, getRootComme
 import { useToggleCommentReaction } from "@/hooks/useCommentReactions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageCircle, Loader2, Link2, Check, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -174,6 +175,11 @@ function InlineCommentCard({ comment, allComments, profiles, currentUserDid, cur
     onReply(comment.uri, comment.cid, extractRkeyFromUri(comment.uri) || "");
   };
 
+  // Nostr profiles are resolved asynchronously: the server returns comments
+  // immediately and refreshes the kind-0 cache after. While we're waiting on
+  // that first fill, show a skeleton instead of a meaningless DID suffix.
+  const isNostr = comment.authorType === "nostr";
+  const profilePending = !profile && isNostr;
   const displayName = profile?.displayName || profile?.handle || comment.authorDid.slice(-8);
   const handle = profile?.handle || comment.authorDid.slice(-12);
 
@@ -181,12 +187,22 @@ function InlineCommentCard({ comment, allComments, profiles, currentUserDid, cur
     <div className={depth > 0 ? "ml-4 border-l-2 border-border pl-3" : ""}>
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <Avatar className="h-5 w-5">
-            <AvatarImage src={profile?.avatar} />
-            <AvatarFallback className="text-[8px]">{displayName?.[0] || "?"}</AvatarFallback>
-          </Avatar>
-          <span className="font-medium text-xs text-foreground">{displayName}</span>
-          <span className="text-[10px] text-muted-foreground">@{handle}</span>
+          {profilePending ? (
+            <>
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-2.5 w-14" />
+            </>
+          ) : (
+            <>
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={profile?.avatar} />
+                <AvatarFallback className="text-[8px]">{displayName?.[0] || "?"}</AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-xs text-foreground">{displayName}</span>
+              <span className="text-[10px] text-muted-foreground">@{handle}</span>
+            </>
+          )}
           <span className="text-[10px] text-muted-foreground">·</span>
           <span className="text-[10px] text-muted-foreground">
             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}

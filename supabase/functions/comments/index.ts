@@ -24,6 +24,12 @@ import {
   readStacksTxIdFromRoot,
   type NostrEvent,
 } from "../_shared/nostr.ts";
+import {
+  fetchAndCacheProfiles,
+  isNostrDid,
+  loadCachedProfiles,
+  type ResolvedProfile,
+} from "../_shared/nostr-profiles.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -582,13 +588,20 @@ serve(async (req) => {
         }
       }
 
-      // Fetch AT Protocol profiles for all unique authors
+      // Resolve author profiles. AT Protocol authors go through Bluesky's
+      // public AppView; Nostr authors come from our `nostr_profiles` cache
+      // (kind-0 metadata). Anything missing or stale in the cache is
+      // refreshed in the background after we send the response, so the next
+      // load picks it up — the UI shows a skeleton in the meantime.
       const authorDids = [...new Set((comments || []).map((c: { author_did: string }) => c.author_did))];
-      const profiles: Record<string, { did: string; handle: string; displayName?: string; avatar?: string }> = {};
+      const profiles: Record<string, ResolvedProfile> = {};
 
-      // Batch fetch profiles in groups of 25 (AppView limit)
-      for (let i = 0; i < authorDids.length; i += 25) {
-        const batch = authorDids.slice(i, i + 25);
+      const atprotoDids = authorDids.filter((d) => !isNostrDid(d));
+      const nostrDids = authorDids.filter(isNostrDid);
+
+      // Batch fetch atproto profiles in groups of 25 (AppView limit)
+      for (let i = 0; i < atprotoDids.length; i += 25) {
+        const batch = atprotoDids.slice(i, i + 25);
         const params = new URLSearchParams();
         batch.forEach((did) => params.append("actors", did));
 
@@ -614,9 +627,35 @@ serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ comments: comments || [], profiles, reactionsByComment }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Nostr profiles: read cache, schedule a relay refresh for any missing
+      // or stale rows. The refresh runs after the response is sent — the
+      // client will see it on the next refetch.
+      let nostrPubkeysToRefresh: string[] = [];
+      if (nostrDids.length > 0) {
+        const { profiles: cached, missing, stale } = await loadCachedProfiles(supabase, nostrDids);
+        Object.assign(profiles, cached);
+        nostrPubkeysToRefresh = [...missing, ...stale];
+      }
+
+      const response = new Response(
+        JSON.stringify({ comments: comments || [], profiles, reactionsByComment }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+
+      if (nostrPubkeysToRefresh.length > 0) {
+        // EdgeRuntime.waitUntil keeps the function alive past the response
+        // so the relay drain + upsert finish without delaying the client.
+        const work = fetchAndCacheProfiles(supabase, nostrPubkeysToRefresh)
+          .catch((err) => console.warn("Background Nostr profile fetch failed:", err));
+        const runtime = (globalThis as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } }).EdgeRuntime;
+        if (runtime?.waitUntil) {
+          runtime.waitUntil(work);
+        }
+        // If waitUntil isn't available (local Deno), the promise still runs;
+        // we just don't guarantee completion before the worker shuts down.
+      }
+
+      return response;
     }
 
     // ============== POST /comments ==============

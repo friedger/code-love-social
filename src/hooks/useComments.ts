@@ -25,6 +25,11 @@ export const commentKeys = {
 /**
  * Hook to fetch comments for a contract
  * Returns both comments and profiles
+ *
+ * Nostr author profiles are resolved asynchronously on the server: the first
+ * response may omit them while the kind-0 cache is being populated from
+ * relays. When that happens we poll briefly so the names + avatars fill in
+ * without the user reloading.
  */
 export function useComments(contractRef: ContractRef, options?: { lineNumber?: number }) {
   return useQuery({
@@ -32,11 +37,19 @@ export function useComments(contractRef: ContractRef, options?: { lineNumber?: n
       ? commentKeys.line(contractRef.principal, contractRef.contractName, options.lineNumber)
       : commentKeys.contract(contractRef.principal, contractRef.contractName),
     queryFn: () =>
-      getComments(contractRef.principal, contractRef.contractName, { 
+      getComments(contractRef.principal, contractRef.contractName, {
         ...options,
         txId: contractRef.txId,
       }),
     select: (data: CommentsWithProfiles) => data,
+    refetchInterval: (query) => {
+      const data = query.state.data as CommentsWithProfiles | undefined;
+      if (!data) return false;
+      const hasUnresolvedNostr = data.comments.some(
+        (c) => c.authorType === "nostr" && !data.profiles[c.authorDid],
+      );
+      return hasUnresolvedNostr ? 3000 : false;
+    },
   });
 }
 
