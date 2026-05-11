@@ -9,12 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, FileCode, ExternalLink, ArrowLeft, BadgeCheck, Zap } from "lucide-react";
+import { MessageSquare, ExternalLink, ArrowLeft, BadgeCheck, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FollowingAvatars } from "@/components/FollowingAvatars";
 import { FollowButton } from "@/components/FollowButton";
 import { PageLayout } from "@/components/PageLayout";
-import { getContractPath } from "@/lib/utils";
+import { ContractIdenticon } from "@/components/ContractIdenticon";
+import { formatContractId, getContractPath } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const NOSTR_DID_PREFIX = "did:pubkey:";
@@ -135,6 +136,31 @@ const ProfilePage = () => {
   const commentProfile: ProfileData | undefined = did ? data?.profiles[did] : undefined;
   const comments = data?.comments || [];
 
+  // Fetch source_hash for each unique contract referenced in comments so the
+  // identicon matches the contract page.
+  const contractKeys = Array.from(
+    new Set(comments.map((c) => `${c.subject.principal}.${c.subject.contractName}`)),
+  );
+  const { data: sourceHashes = {} } = useQuery({
+    queryKey: ["profile-comment-contract-hashes", contractKeys.sort().join("|")],
+    queryFn: async () => {
+      const principals = Array.from(new Set(comments.map((c) => c.subject.principal)));
+      const names = Array.from(new Set(comments.map((c) => c.subject.contractName)));
+      const { data: rows } = await supabase
+        .from("contracts")
+        .select("principal, name, source_hash")
+        .in("principal", principals)
+        .in("name", names);
+      const map: Record<string, string | null> = {};
+      for (const r of rows || []) {
+        map[`${r.principal}.${r.name}`] = r.source_hash;
+      }
+      return map;
+    },
+    enabled: contractKeys.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const displayProfile: ResolvedProfile | undefined = (() => {
     if (protocol === "nostr") {
       if (nostrProfile) return nostrProfile;
@@ -175,6 +201,7 @@ const ProfilePage = () => {
         comments={comments}
         isLoading={isLoadingComments}
         error={error}
+        sourceHashes={sourceHashes}
       />
     </PageLayout>
   );
@@ -294,9 +321,10 @@ interface CommentsListProps {
   }>;
   isLoading: boolean;
   error: unknown;
+  sourceHashes: Record<string, string | null>;
 }
 
-function CommentsList({ comments, isLoading, error }: CommentsListProps) {
+function CommentsList({ comments, isLoading, error, sourceHashes }: CommentsListProps) {
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
@@ -329,33 +357,42 @@ function CommentsList({ comments, isLoading, error }: CommentsListProps) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {comments.map((comment) => (
-            <Card key={comment.uri} className="hover:bg-accent/50 transition-colors">
-              <CardContent className="p-4">
-                <p className="text-foreground mb-2">{comment.text}</p>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <Link
-                    to={`/contract/${getContractPath(comment.subject.principal, comment.subject.contractName)}`}
-                    className="flex items-center gap-1 hover:text-primary transition-colors"
-                  >
-                    <FileCode className="h-4 w-4" />
-                    <span className="truncate max-w-[200px]">
-                      {comment.subject.contractName}
-                    </span>
-                    {comment.lineNumber && (
-                      <span className="text-xs">:L{comment.lineNumber}</span>
-                    )}
-                  </Link>
-                  <Link
-                    to={`/contract/${getContractPath(comment.subject.principal, comment.subject.contractName)}${comment.lineNumber ? `?line=${comment.lineNumber}` : ""}`}
-                    className="hover:text-primary transition-colors"
-                  >
-                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {comments.map((comment) => {
+            const path = getContractPath(comment.subject.principal, comment.subject.contractName);
+            const key = `${comment.subject.principal}.${comment.subject.contractName}`;
+            const identiconValue = sourceHashes[key] || path;
+            return (
+              <Card key={comment.uri} className="hover:bg-accent/50 transition-colors">
+                <CardContent className="p-4">
+                  <p className="text-foreground mb-2">{comment.text}</p>
+                  <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                    <Link
+                      to={`/contract/${path}`}
+                      className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors group"
+                    >
+                      <ContractIdenticon
+                        value={identiconValue}
+                        size={20}
+                        className="shrink-0 rounded"
+                      />
+                      <span className="font-mono text-xs sm:text-sm truncate group-hover:text-primary text-foreground">
+                        {formatContractId(comment.subject.principal, comment.subject.contractName)}
+                      </span>
+                      {comment.lineNumber && (
+                        <span className="text-xs shrink-0">:L{comment.lineNumber}</span>
+                      )}
+                    </Link>
+                    <Link
+                      to={`/contract/${path}${comment.lineNumber ? `?line=${comment.lineNumber}` : ""}`}
+                      className="shrink-0 hover:text-primary transition-colors"
+                    >
+                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
