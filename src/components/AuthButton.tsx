@@ -161,7 +161,7 @@ export function AuthButton({
               <TabsTrigger value="bluesky">Bluesky</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="nostr" className="mt-4 min-h-[360px] flex flex-col">
+            <TabsContent value="nostr" className="mt-4 h-[280px] flex flex-col">
               <NostrLoginForm
                 hasExtension={hasNostrExtension}
                 onLogin={handleNostrLogin}
@@ -171,7 +171,7 @@ export function AuthButton({
               />
             </TabsContent>
 
-            <TabsContent value="bluesky" className="mt-4 min-h-[360px] flex flex-col">
+            <TabsContent value="bluesky" className="mt-4 h-[280px] flex flex-col">
               <BlueskyLoginForm
                 onSubmit={handleAtprotoSubmit}
                 isSubmitting={isSubmitting}
