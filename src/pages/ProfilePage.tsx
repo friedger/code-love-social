@@ -346,9 +346,12 @@ function CommentsList({ comments, isLoading, error }: CommentsListProps) {
                       <span className="text-xs">:L{comment.lineNumber}</span>
                     )}
                   </Link>
-                  <span>
+                  <Link
+                    to={`/contract/${getContractPath(comment.subject.principal, comment.subject.contractName)}${comment.lineNumber ? `?line=${comment.lineNumber}` : ""}`}
+                    className="hover:text-primary transition-colors"
+                  >
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                  </span>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
