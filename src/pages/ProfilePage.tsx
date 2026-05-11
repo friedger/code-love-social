@@ -146,6 +146,7 @@ const ProfilePage = () => {
             <ProfileHeader
               profile={displayProfile}
               did={did}
+              protocol={protocol}
               currentUserDid={user?.id}
             />
           )}
@@ -177,11 +178,12 @@ function ProfileSkeleton() {
 interface ProfileHeaderProps {
   profile?: ResolvedProfile;
   did?: string;
+  protocol: ProtocolKind;
   currentUserDid?: string;
 }
 
-function ProfileHeader({ profile, did, currentUserDid }: ProfileHeaderProps) {
-  const isNostr = profile?.protocol === "nostr";
+function ProfileHeader({ profile, did, protocol, currentUserDid }: ProfileHeaderProps) {
+  const isNostr = protocol === "nostr";
   const npub = isNostr && did ? did.slice(NOSTR_DID_PREFIX.length) : undefined;
 
   const externalUrl = isNostr
