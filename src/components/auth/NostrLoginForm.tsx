@@ -58,7 +58,7 @@ export function NostrLoginForm({
   };
 
   return (
-    <Tabs value={mode} onValueChange={setMode} className="w-full">
+    <Tabs value={mode} onValueChange={setMode} className="w-full flex flex-col flex-1">
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="extension" className="gap-1">
           <Zap className="h-3 w-3" /> Extension
@@ -72,7 +72,7 @@ export function NostrLoginForm({
       </TabsList>
 
       {/* Extension */}
-      <TabsContent value="extension" className="mt-4 space-y-4 min-h-[260px]">
+      <TabsContent value="extension" className="mt-4 space-y-4 min-h-[260px] flex flex-col">
         {!hasExtension ? (
           <div className="text-center space-y-3 py-4">
             <Zap className="h-8 w-8 mx-auto text-muted-foreground" />
@@ -107,7 +107,7 @@ export function NostrLoginForm({
               Sign in using your Nostr browser extension (NIP-07).
             </p>
             <Button
-              className="w-full"
+              className="w-full mt-auto"
               onClick={onLogin}
               disabled={isSubmitting}
             >
@@ -126,8 +126,8 @@ export function NostrLoginForm({
       </TabsContent>
 
       {/* nsec */}
-      <TabsContent value="nsec" className="mt-4 space-y-4 min-h-[260px]">
-        <form onSubmit={handleNsec} className="space-y-3">
+      <TabsContent value="nsec" className="mt-4 space-y-4 min-h-[260px] flex flex-col">
+        <form onSubmit={handleNsec} className="space-y-3 flex flex-col flex-1">
           <div className="space-y-1.5">
             <Label htmlFor="nsec-input">Private key (nsec)</Label>
             <Input
@@ -149,7 +149,7 @@ export function NostrLoginForm({
           )}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full mt-auto"
             disabled={isSubmitting || !nsec.trim()}
           >
             {isSubmitting ? (
@@ -166,8 +166,8 @@ export function NostrLoginForm({
       </TabsContent>
 
       {/* bunker */}
-      <TabsContent value="bunker" className="mt-4 space-y-4 min-h-[260px]">
-        <form onSubmit={handleBunker} className="space-y-3">
+      <TabsContent value="bunker" className="mt-4 space-y-4 min-h-[260px] flex flex-col">
+        <form onSubmit={handleBunker} className="space-y-3 flex flex-col flex-1">
           <div className="space-y-1.5">
             <Label htmlFor="bunker-input">Bunker URL or NIP-05</Label>
             <Input
@@ -203,7 +203,7 @@ export function NostrLoginForm({
           )}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full mt-auto"
             disabled={isSubmitting || !bunkerInput.trim()}
           >
             {isSubmitting ? (
