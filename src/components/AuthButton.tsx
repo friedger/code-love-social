@@ -48,7 +48,6 @@ export function AuthButton({
 }: AuthButtonProps) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("nostr");
 
   const handleAtprotoSubmit = async (handle: string) => {
     setIsSubmitting(true);
