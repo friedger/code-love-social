@@ -27,6 +27,11 @@ interface AuthButtonProps {
   hasNostrExtension: boolean;
   onLoginAtproto: (handle: string) => Promise<void>;
   onLoginNostr: () => Promise<void>;
+  onLoginNostrNsec: (nsec: string) => Promise<void>;
+  onLoginNostrBunker: (
+    input: string,
+    onauth?: (url: string) => void,
+  ) => Promise<void>;
   onLogout: () => Promise<void>;
 }
 
@@ -45,6 +50,8 @@ export function AuthButton({
   hasNostrExtension,
   onLoginAtproto,
   onLoginNostr,
+  onLoginNostrNsec,
+  onLoginNostrBunker,
   onLogout,
 }: AuthButtonProps) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -60,15 +67,21 @@ export function AuthButton({
     }
   };
 
-  const handleNostrLogin = async () => {
+  const wrapNostr = async (fn: () => Promise<void>) => {
     setIsSubmitting(true);
     try {
-      await onLoginNostr();
+      await fn();
       setShowLoginDialog(false);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleNostrLogin = () => wrapNostr(() => onLoginNostr());
+  const handleNostrNsec = (nsec: string) =>
+    wrapNostr(() => onLoginNostrNsec(nsec));
+  const handleNostrBunker = (input: string, onauth?: (url: string) => void) =>
+    wrapNostr(() => onLoginNostrBunker(input, onauth));
 
   if (isLoading) {
     return (
@@ -159,6 +172,8 @@ export function AuthButton({
               <NostrLoginForm
                 hasExtension={hasNostrExtension}
                 onLogin={handleNostrLogin}
+                onLoginNsec={handleNostrNsec}
+                onLoginBunker={handleNostrBunker}
                 isSubmitting={isSubmitting}
               />
             </TabsContent>
