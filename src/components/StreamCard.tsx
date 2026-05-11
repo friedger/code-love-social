@@ -66,7 +66,7 @@ export function StreamCard({ comment, profile, currentUserDid, currentUserAuthTy
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <ContractIdenticon value={sourceHash || contractPath} size={20} className="shrink-0 rounded-sm" />
+              <ContractIdenticon contract={{ principal: comment.subject.principal, contractName: comment.subject.contractName }} size={20} className="shrink-0 rounded-sm" />
               <Link
                 to={getContractLink()}
                 className="font-mono text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors break-all"
