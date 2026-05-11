@@ -136,6 +136,31 @@ const ProfilePage = () => {
   const commentProfile: ProfileData | undefined = did ? data?.profiles[did] : undefined;
   const comments = data?.comments || [];
 
+  // Fetch source_hash for each unique contract referenced in comments so the
+  // identicon matches the contract page.
+  const contractKeys = Array.from(
+    new Set(comments.map((c) => `${c.subject.principal}.${c.subject.contractName}`)),
+  );
+  const { data: sourceHashes = {} } = useQuery({
+    queryKey: ["profile-comment-contract-hashes", contractKeys.sort().join("|")],
+    queryFn: async () => {
+      const principals = Array.from(new Set(comments.map((c) => c.subject.principal)));
+      const names = Array.from(new Set(comments.map((c) => c.subject.contractName)));
+      const { data: rows } = await supabase
+        .from("contracts")
+        .select("principal, name, source_hash")
+        .in("principal", principals)
+        .in("name", names);
+      const map: Record<string, string | null> = {};
+      for (const r of rows || []) {
+        map[`${r.principal}.${r.name}`] = r.source_hash;
+      }
+      return map;
+    },
+    enabled: contractKeys.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const displayProfile: ResolvedProfile | undefined = (() => {
     if (protocol === "nostr") {
       if (nostrProfile) return nostrProfile;
