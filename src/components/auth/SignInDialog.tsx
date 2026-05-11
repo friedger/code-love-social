@@ -238,7 +238,7 @@ export function SignInDialog({
             </p>
           </div>
         ) : (
-          <div key="detail" className="animate-fade-in flex flex-col gap-5">
+          <div key="detail" className="flex flex-col gap-5 animate-in fade-in-0 slide-in-from-right-4 duration-300 ease-out">
             <DialogHeader className="space-y-2 text-left">
               <button
                 type="button"
