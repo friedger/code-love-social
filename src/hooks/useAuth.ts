@@ -81,7 +81,7 @@ export function useAuth(): UseAuthReturn {
 
   const loginWithAtproto = useCallback(
     async (handle: string) => {
-      if (nostr.isAuthenticated) nostr.logout();
+      if (nostr.isAuthenticated) await nostr.logout();
       await atproto.login(handle);
     },
     [atproto, nostr],
