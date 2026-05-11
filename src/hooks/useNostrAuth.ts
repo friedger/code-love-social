@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   nostrLogin,
+  nostrLoginWithNsec,
+  nostrLoginWithBunker,
   nostrLogout,
   getNostrSession,
   hasNostrExtension,
@@ -15,7 +17,12 @@ interface UseNostrAuthReturn {
   error: string | null;
   hasExtension: boolean;
   login: () => Promise<void>;
-  logout: () => void;
+  loginWithNsec: (nsec: string) => Promise<void>;
+  loginWithBunker: (
+    input: string,
+    onauth?: (url: string) => void,
+  ) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export function useNostrAuth(): UseNostrAuthReturn {
@@ -29,49 +36,65 @@ export function useNostrAuth(): UseNostrAuthReturn {
       try {
         setIsLoading(true);
         setError(null);
-
-        // Check for extension
         const extensionAvailable = await waitForNostrExtension(2000);
         setHasExtension(extensionAvailable);
-
-        // Check for existing session
         const sessionUser = getNostrSession();
-        if (sessionUser) {
-          setUser(sessionUser);
-        }
+        if (sessionUser) setUser(sessionUser);
       } catch (err) {
         console.error("Nostr auth init error:", err);
       } finally {
         setIsLoading(false);
       }
     };
-
     initialize();
   }, []);
 
-  const login = useCallback(async () => {
-    try {
+  const wrap = useCallback(
+    async <T,>(fn: () => Promise<T>): Promise<T> => {
       setIsLoading(true);
       setError(null);
-
-      if (!hasNostrExtension()) {
-        throw new Error(
-          "No Nostr extension found. Please install Alby, nos2x, or another NIP-07 compatible extension."
-        );
+      try {
+        return await fn();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Login failed";
+        setError(msg);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [],
+  );
 
-      const loggedInUser = await nostrLogin();
-      setUser(loggedInUser);
-    } catch (err) {
-      console.error("Nostr login error:", err);
-      setError(err instanceof Error ? err.message : "Login failed");
-    } finally {
-      setIsLoading(false);
+  const login = useCallback(async () => {
+    if (!hasNostrExtension()) {
+      const msg =
+        "No Nostr extension found. Please install Alby, nos2x, or another NIP-07 compatible extension.";
+      setError(msg);
+      throw new Error(msg);
     }
-  }, []);
+    const u = await wrap(() => nostrLogin());
+    setUser(u);
+  }, [wrap]);
 
-  const logout = useCallback(() => {
-    nostrLogout();
+  const loginWithNsec = useCallback(
+    async (nsec: string) => {
+      const u = await wrap(() => nostrLoginWithNsec(nsec));
+      setUser(u);
+    },
+    [wrap],
+  );
+
+  const loginWithBunker = useCallback(
+    async (input: string, onauth?: (url: string) => void) => {
+      const u = await wrap(() => nostrLoginWithBunker(input, onauth));
+      setUser(u);
+    },
+    [wrap],
+  );
+
+  const logout = useCallback(async () => {
+    await nostrLogout();
     setUser(null);
   }, []);
 
@@ -82,6 +105,8 @@ export function useNostrAuth(): UseNostrAuthReturn {
     error,
     hasExtension,
     login,
+    loginWithNsec,
+    loginWithBunker,
     logout,
   };
 }

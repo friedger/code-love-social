@@ -24,6 +24,11 @@ interface UseAuthReturn {
   hasNostrExtension: boolean;
   loginWithAtproto: (handle: string) => Promise<void>;
   loginWithNostr: () => Promise<void>;
+  loginWithNostrNsec: (nsec: string) => Promise<void>;
+  loginWithNostrBunker: (
+    input: string,
+    onauth?: (url: string) => void,
+  ) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -76,7 +81,7 @@ export function useAuth(): UseAuthReturn {
 
   const loginWithAtproto = useCallback(
     async (handle: string) => {
-      if (nostr.isAuthenticated) nostr.logout();
+      if (nostr.isAuthenticated) await nostr.logout();
       await atproto.login(handle);
     },
     [atproto, nostr],
@@ -87,9 +92,25 @@ export function useAuth(): UseAuthReturn {
     await nostr.login();
   }, [atproto, nostr]);
 
+  const loginWithNostrNsec = useCallback(
+    async (nsec: string) => {
+      if (atproto.isAuthenticated) await atproto.logout();
+      await nostr.loginWithNsec(nsec);
+    },
+    [atproto, nostr],
+  );
+
+  const loginWithNostrBunker = useCallback(
+    async (input: string, onauth?: (url: string) => void) => {
+      if (atproto.isAuthenticated) await atproto.logout();
+      await nostr.loginWithBunker(input, onauth);
+    },
+    [atproto, nostr],
+  );
+
   const logout = useCallback(async () => {
     if (atproto.isAuthenticated) await atproto.logout();
-    if (nostr.isAuthenticated) nostr.logout();
+    if (nostr.isAuthenticated) await nostr.logout();
   }, [atproto, nostr]);
 
   return {
@@ -101,6 +122,8 @@ export function useAuth(): UseAuthReturn {
     hasNostrExtension: nostr.hasExtension,
     loginWithAtproto,
     loginWithNostr,
+    loginWithNostrNsec,
+    loginWithNostrBunker,
     logout,
   };
 }
