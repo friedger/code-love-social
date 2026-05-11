@@ -106,7 +106,7 @@ const ProfilePage = () => {
         protocol: "nostr",
       };
     },
-    enabled: !!did && protocol === "nostr",
+    enabled: !!nostrPubkey && protocol === "nostr",
     staleTime: 5 * 60 * 1000,
   });
 
