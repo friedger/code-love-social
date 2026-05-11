@@ -128,43 +128,46 @@ export function AuthButton({
         <LogIn className="h-4 w-4 mr-2" /> Sign in
       </Button>
 
-      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sign in</DialogTitle>
-            <DialogDescription>
-              Choose your preferred authentication method.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="nostr" className="gap-1">
-                <Zap className="h-3 w-3" />
-                Nostr
-              </TabsTrigger>
-              <TabsTrigger value="bluesky">Bluesky</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="nostr" className="mt-4 h-[280px] flex flex-col">
-              <NostrLoginForm
-                hasExtension={hasNostrExtension}
-                onLogin={handleNostrLogin}
-                onLoginNsec={handleNostrNsec}
-                onLoginBunker={handleNostrBunker}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-
-            <TabsContent value="bluesky" className="mt-4 h-[280px] flex flex-col">
-              <BlueskyLoginForm
-                onSubmit={handleAtprotoSubmit}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      <SignInDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        hasNostrExtension={hasNostrExtension}
+        isSubmitting={isSubmitting}
+        onLoginAtproto={handleAtprotoSubmit}
+        onLoginNostr={() =>
+          (async () => {
+            setIsSubmitting(true);
+            try {
+              await onLoginNostr();
+              setShowLoginDialog(false);
+            } finally {
+              setIsSubmitting(false);
+            }
+          })()
+        }
+        onLoginNostrNsec={(nsec) =>
+          (async () => {
+            setIsSubmitting(true);
+            try {
+              await onLoginNostrNsec(nsec);
+              setShowLoginDialog(false);
+            } finally {
+              setIsSubmitting(false);
+            }
+          })()
+        }
+        onLoginNostrBunker={(input, onauth) =>
+          (async () => {
+            setIsSubmitting(true);
+            try {
+              await onLoginNostrBunker(input, onauth);
+              setShowLoginDialog(false);
+            } finally {
+              setIsSubmitting(false);
+            }
+          })()
+        }
+      />
     </>
   );
 }
