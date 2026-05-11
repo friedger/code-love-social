@@ -86,15 +86,32 @@ const ProfilePage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // ===== Nostr profile (cached server-side in nostr_profiles) =====
+  // ===== Nostr profile =====
+  // Calls the `nostr-profile` edge function, which checks the `nostr_profiles`
+  // cache and, if missing/stale, drains kind-0 from default relays before
+  // returning the freshest version.
   const { data: nostrProfile, isLoading: isLoadingNostr } = useQuery({
     queryKey: ["nostr-profile", nostrPubkey],
     queryFn: async (): Promise<ResolvedProfile | null> => {
-      const { data: row } = await supabase
-        .from("nostr_profiles")
-        .select("pubkey, name, display_name, picture, nip05, about")
-        .eq("pubkey", nostrPubkey!)
-        .maybeSingle();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nostr-profile?pubkey=${nostrPubkey}`;
+      const resp = await fetch(url, {
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (!resp.ok) return null;
+      const json = await resp.json() as {
+        profile: {
+          pubkey: string;
+          name: string | null;
+          display_name: string | null;
+          picture: string | null;
+          nip05: string | null;
+          about: string | null;
+        } | null;
+      };
+      const row = json.profile;
       if (!row) return null;
       return {
         did: nostrDid!,

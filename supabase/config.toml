@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.admin-whitelist]
 verify_jwt = false
+
+[functions.nostr-profile]
+verify_jwt = false
