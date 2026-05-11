@@ -39,6 +39,36 @@ export function getContractPath(principal: string, contractName: string): string
 }
 
 /**
+ * Strict typed reference to a Clarity contract.
+ * Use this everywhere a contract needs to be identified visually or by URL.
+ */
+export interface ContractRef {
+  principal: string;
+  contractName: string;
+}
+
+/**
+ * Single source of truth for the identicon seed.
+ *
+ * Always derived from `principal.contractName` so the same contract renders
+ * the same identicon everywhere in the app, regardless of whether the caller
+ * happens to know the source hash.
+ *
+ * Only accepts a typed {@link ContractRef} — never a free-form string.
+ */
+export function getContractIdenticonSeed(ref: ContractRef): string {
+  if (!ref || typeof ref.principal !== "string" || typeof ref.contractName !== "string") {
+    throw new Error("getContractIdenticonSeed: invalid ContractRef");
+  }
+  const principal = ref.principal.trim();
+  const contractName = ref.contractName.trim();
+  if (!principal || !contractName) {
+    throw new Error("getContractIdenticonSeed: principal and contractName are required");
+  }
+  return `${principal}.${contractName}`;
+}
+
+/**
  * Determine if a Stacks address is on testnet
  * Testnet addresses start with "ST" or "SN"
  */
