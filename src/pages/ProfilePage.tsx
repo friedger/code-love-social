@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { nip19 } from "nostr-tools";
 import { getCommentsByAuthor, ProfileData } from "@/lib/comments-api";
 import { identityService } from "@/lib/identity-service";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +38,23 @@ const ProfilePage = () => {
 
   const protocol: ProtocolKind = isNostrIdentifier(identifier) ? "nostr" : "atproto";
 
+  // Normalize Nostr identifier (npub or did:pubkey:hex) into hex pubkey + canonical DID.
+  let nostrPubkey: string | undefined;
+  let nostrDid: string | undefined;
+  if (protocol === "nostr" && identifier) {
+    try {
+      if (identifier.startsWith("npub1")) {
+        const decoded = nip19.decode(identifier);
+        if (decoded.type === "npub") nostrPubkey = decoded.data as string;
+      } else if (identifier.startsWith(NOSTR_DID_PREFIX)) {
+        nostrPubkey = identifier.slice(NOSTR_DID_PREFIX.length);
+      }
+    } catch {
+      // invalid npub
+    }
+    if (nostrPubkey) nostrDid = `${NOSTR_DID_PREFIX}${nostrPubkey}`;
+  }
+
   // ===== AT Protocol resolution =====
   const isHandle = identifier && protocol === "atproto"
     ? identityService.isHandle(identifier)
@@ -50,7 +68,7 @@ const ProfilePage = () => {
   });
 
   const did = protocol === "nostr"
-    ? identifier
+    ? nostrDid
     : (isHandle ? resolvedDid : identifier);
 
   // ===== Comments (works for both protocols) =====
@@ -70,18 +88,17 @@ const ProfilePage = () => {
 
   // ===== Nostr profile (cached server-side in nostr_profiles) =====
   const { data: nostrProfile, isLoading: isLoadingNostr } = useQuery({
-    queryKey: ["nostr-profile", did],
+    queryKey: ["nostr-profile", nostrPubkey],
     queryFn: async (): Promise<ResolvedProfile | null> => {
-      const pubkey = did!.slice(NOSTR_DID_PREFIX.length);
       const { data: row } = await supabase
         .from("nostr_profiles")
         .select("pubkey, name, display_name, picture, nip05, about")
-        .eq("pubkey", pubkey)
+        .eq("pubkey", nostrPubkey!)
         .maybeSingle();
       if (!row) return null;
       return {
-        did: did!,
-        handle: row.nip05 || row.name || pubkey.slice(0, 12),
+        did: nostrDid!,
+        handle: row.nip05 || row.name || nostrPubkey!.slice(0, 12),
         displayName: row.display_name || row.name || undefined,
         avatar: row.picture || undefined,
         nip05: row.nip05 || undefined,
@@ -89,7 +106,7 @@ const ProfilePage = () => {
         protocol: "nostr",
       };
     },
-    enabled: !!did && protocol === "nostr",
+    enabled: !!nostrPubkey && protocol === "nostr",
     staleTime: 5 * 60 * 1000,
   });
 
