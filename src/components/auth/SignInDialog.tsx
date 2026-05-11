@@ -239,17 +239,18 @@ export function SignInDialog({
           </div>
         ) : (
           <div key="detail" className="flex flex-col gap-5 animate-in fade-in-0 slide-in-from-right-4 duration-300 ease-out">
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={isSubmitting}
+              className="group inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-fit disabled:opacity-50 -mb-1"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+              Other sign-in options
+            </button>
             <DialogHeader className="space-y-2 text-left">
-              <button
-                type="button"
-                onClick={goBack}
-                disabled={isSubmitting}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit disabled:opacity-50"
-              >
-                <ArrowLeft className="h-3 w-3" /> Other options
-              </button>
-              <DialogTitle className="text-xl flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
+              <DialogTitle className="text-xl flex items-center gap-2.5 pt-1">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                   {current.icon}
                 </span>
                 {current.detailTitle}
