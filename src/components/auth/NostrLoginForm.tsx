@@ -72,7 +72,7 @@ export function NostrLoginForm({
       </TabsList>
 
       {/* Extension */}
-      <TabsContent value="extension" className="mt-4 space-y-4">
+      <TabsContent value="extension" className="mt-4 space-y-4 min-h-[260px]">
         {!hasExtension ? (
           <div className="text-center space-y-3 py-4">
             <Zap className="h-8 w-8 mx-auto text-muted-foreground" />
@@ -126,7 +126,7 @@ export function NostrLoginForm({
       </TabsContent>
 
       {/* nsec */}
-      <TabsContent value="nsec" className="mt-4 space-y-4">
+      <TabsContent value="nsec" className="mt-4 space-y-4 min-h-[260px]">
         <form onSubmit={handleNsec} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="nsec-input">Private key (nsec)</Label>
@@ -166,7 +166,7 @@ export function NostrLoginForm({
       </TabsContent>
 
       {/* bunker */}
-      <TabsContent value="bunker" className="mt-4 space-y-4">
+      <TabsContent value="bunker" className="mt-4 space-y-4 min-h-[260px]">
         <form onSubmit={handleBunker} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="bunker-input">Bunker URL or NIP-05</Label>
