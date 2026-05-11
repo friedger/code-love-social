@@ -146,6 +146,7 @@ const ProfilePage = () => {
             <ProfileHeader
               profile={displayProfile}
               did={did}
+              protocol={protocol}
               currentUserDid={user?.id}
             />
           )}
