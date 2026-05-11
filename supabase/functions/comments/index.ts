@@ -327,8 +327,25 @@ async function indexNostrComment(
   if (!event.content || event.content.length > 10000) {
     throw new Error("Invalid comment content length");
   }
-  const { lineNumber, lineRange } = parseLineTags(event.tags);
+  let { lineNumber, lineRange } = parseLineTags(event.tags);
   const parentId = findTagValue(event.tags, "e") || null;
+
+  // If this is a reply and the event itself didn't carry line tags, inherit
+  // the parent's line scope so the reply renders in the same line thread on
+  // the contract page (parents may live in atproto or nostr).
+  if (parentId && lineNumber === undefined && lineRange === undefined) {
+    const { data: parentRow } = await supabase
+      .from("comments_index")
+      .select("line_number, line_range_start, line_range_end")
+      .or(`uri.eq.${parentId},cid.eq.${parentId}`)
+      .maybeSingle();
+    if (parentRow) {
+      if (parentRow.line_number != null) lineNumber = parentRow.line_number;
+      if (parentRow.line_range_start != null && parentRow.line_range_end != null) {
+        lineRange = { start: parentRow.line_range_start, end: parentRow.line_range_end };
+      }
+    }
+  }
 
   const { error } = await supabase.from("comments_index").insert({
     uri: event.id,
