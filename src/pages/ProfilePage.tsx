@@ -201,16 +201,17 @@ interface ProfileHeaderProps {
 
 function ProfileHeader({ profile, did, protocol, currentUserDid }: ProfileHeaderProps) {
   const isNostr = protocol === "nostr";
-  const npub = isNostr && did ? did.slice(NOSTR_DID_PREFIX.length) : undefined;
+  const hexPubkey = isNostr && did ? did.slice(NOSTR_DID_PREFIX.length) : undefined;
+  const npub = hexPubkey ? nip19.npubEncode(hexPubkey) : undefined;
 
   const externalUrl = isNostr
-    ? `https://njump.me/${npub}`
+    ? `https://njump.me/${npub || hexPubkey}`
     : `https://bsky.app/profile/${profile?.handle || did}`;
   const externalLabel = isNostr ? "View on njump" : "View on Bluesky";
   const ExternalIcon = isNostr ? Zap : ExternalLink;
 
   const fallbackHandle = isNostr
-    ? (npub ? `${npub.slice(0, 8)}…${npub.slice(-4)}` : did)
+    ? (npub ? `${npub.slice(0, 12)}…${npub.slice(-4)}` : did)
     : did?.slice(0, 20);
 
   return (
@@ -243,7 +244,7 @@ function ProfileHeader({ profile, did, protocol, currentUserDid }: ProfileHeader
               {isNostr && profile?.nip05 ? (
                 <p className="text-muted-foreground text-sm sm:text-base break-all inline-flex items-center gap-1 mt-0.5">
                   <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
-                  {profile.nip05}
+                  @{profile.nip05}
                 </p>
               ) : (
                 <p className="text-muted-foreground text-sm sm:text-base break-all mt-0.5">
@@ -253,7 +254,7 @@ function ProfileHeader({ profile, did, protocol, currentUserDid }: ProfileHeader
 
               {isNostr && npub && (
                 <p className="text-xs text-muted-foreground/70 font-mono break-all mt-1">
-                  {npub.slice(0, 12)}…{npub.slice(-8)}
+                  {npub}
                 </p>
               )}
 
