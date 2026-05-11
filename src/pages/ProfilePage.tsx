@@ -68,7 +68,7 @@ const ProfilePage = () => {
   });
 
   const did = protocol === "nostr"
-    ? identifier
+    ? nostrDid
     : (isHandle ? resolvedDid : identifier);
 
   // ===== Comments (works for both protocols) =====
@@ -88,18 +88,17 @@ const ProfilePage = () => {
 
   // ===== Nostr profile (cached server-side in nostr_profiles) =====
   const { data: nostrProfile, isLoading: isLoadingNostr } = useQuery({
-    queryKey: ["nostr-profile", did],
+    queryKey: ["nostr-profile", nostrPubkey],
     queryFn: async (): Promise<ResolvedProfile | null> => {
-      const pubkey = did!.slice(NOSTR_DID_PREFIX.length);
       const { data: row } = await supabase
         .from("nostr_profiles")
         .select("pubkey, name, display_name, picture, nip05, about")
-        .eq("pubkey", pubkey)
+        .eq("pubkey", nostrPubkey!)
         .maybeSingle();
       if (!row) return null;
       return {
-        did: did!,
-        handle: row.nip05 || row.name || pubkey.slice(0, 12),
+        did: nostrDid!,
+        handle: row.nip05 || row.name || nostrPubkey!.slice(0, 12),
         displayName: row.display_name || row.name || undefined,
         avatar: row.picture || undefined,
         nip05: row.nip05 || undefined,
