@@ -202,7 +202,7 @@ export function SignInDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md p-5 sm:p-6 gap-5 transition-all duration-300">
         {!current ? (
-          <div key="picker" className="animate-fade-in flex flex-col gap-5">
+          <div key="picker" className="flex flex-col gap-5 animate-in fade-in-0 slide-in-from-left-4 duration-300 ease-out">
             <DialogHeader className="space-y-1.5 text-left">
               <DialogTitle className="text-2xl">Welcome 👋</DialogTitle>
               <DialogDescription>
