@@ -304,7 +304,7 @@ export function ContractExplorerCard({ contract, currentUserDid }: ContractExplo
       {/* Header */}
       <div className="flex items-center justify-between gap-3 p-3 sm:p-4 border-b bg-muted/30">
         <div className="flex items-center gap-3 min-w-0">
-          <ContractIdenticon value={contract.source_hash || `${contract.principal}.${contract.name}`} size={40} />
+          <ContractIdenticon contract={{ principal: contract.principal, contractName: contract.name }} size={40} />
           <div className="min-w-0">
             <Link 
               to={contractPath}

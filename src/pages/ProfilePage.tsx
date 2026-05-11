@@ -371,7 +371,7 @@ function CommentsList({ comments, isLoading, error, sourceHashes }: CommentsList
                       className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors group"
                     >
                       <ContractIdenticon
-                        value={identiconValue}
+                        contract={{ principal: comment.subject.principal, contractName: comment.subject.contractName }}
                         size={20}
                         className="shrink-0 rounded"
                       />

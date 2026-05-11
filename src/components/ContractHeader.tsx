@@ -26,12 +26,12 @@ export function ContractHeader({
         {/* Left: Contract identity */}
         <div className="flex items-start gap-2 sm:gap-3 min-w-0">
           <ContractIdenticon 
-            value={sourceHash || getContractPath(principal, contractName)} 
+            contract={{ principal, contractName }}
             size={40} 
             className="shrink-0 rounded sm:hidden" 
           />
           <ContractIdenticon 
-            value={sourceHash || getContractPath(principal, contractName)} 
+            contract={{ principal, contractName }}
             size={48} 
             className="shrink-0 rounded hidden sm:block" 
           />

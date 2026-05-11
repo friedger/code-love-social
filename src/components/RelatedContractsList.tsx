@@ -37,7 +37,7 @@ export function RelatedContractsList({ contracts }: RelatedContractsListProps) {
               className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
             >
               <ContractIdenticon
-                value={identiconValue}
+                contract={{ principal: contract.principal, contractName: contract.name }}
                 size={32}
               />
             <div className="flex-1 min-w-0">
