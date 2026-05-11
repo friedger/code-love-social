@@ -200,13 +200,13 @@ export function SignInDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md p-5 sm:p-6 gap-5">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md p-5 sm:p-6 gap-5 transition-all duration-300">
         {!current ? (
-          <>
+          <div key="picker" className="animate-fade-in flex flex-col gap-5">
             <DialogHeader className="space-y-1.5 text-left">
               <DialogTitle className="text-2xl">Welcome 👋</DialogTitle>
               <DialogDescription>
-                Sign in to comment, react, and follow contracts.
+                Sign in to comment, react, and follow other reviewers.
               </DialogDescription>
             </DialogHeader>
 
@@ -236,9 +236,9 @@ export function SignInDialog({
             <p className="text-center text-xs text-muted-foreground">
               No account needed — bring your decentralized identity.
             </p>
-          </>
+          </div>
         ) : (
-          <>
+          <div key="detail" className="animate-fade-in flex flex-col gap-5">
             <DialogHeader className="space-y-2 text-left">
               <button
                 type="button"
@@ -319,7 +319,7 @@ export function SignInDialog({
                 )}
               </Button>
             </form>
-          </>
+          </div>
         )}
       </DialogContent>
     </Dialog>
