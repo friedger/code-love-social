@@ -68,9 +68,11 @@ const StreamPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <WarningBanner>
-        All comments are temporary and may require migration to a new namespace in the future.
-      </WarningBanner>
+      {user?.authType === "atproto" && (
+        <WarningBanner>
+          All comments are temporary and may require migration to a new namespace in the future.
+        </WarningBanner>
+      )}
       <PageHeader />
 
       <main className="container mx-auto px-4 py-6 max-w-3xl">
