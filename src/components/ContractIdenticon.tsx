@@ -1,9 +1,14 @@
 import { useMemo } from "react";
 import { minidenticon } from "minidenticons";
+import { getContractIdenticonSeed, type ContractRef } from "@/lib/utils";
 
 interface ContractIdenticonProps {
-  /** Contract identifier to hash (e.g., "principal.contractName") */
-  value: string;
+  /**
+   * Typed contract reference. The identicon is always seeded from
+   * `principal.contractName` to guarantee a single source of truth across
+   * every place a contract is rendered.
+   */
+  contract: ContractRef;
   /** Size in pixels */
   size?: number;
   /** Saturation 0-100, default 95 */
@@ -14,23 +19,26 @@ interface ContractIdenticonProps {
 }
 
 export function ContractIdenticon({
-  value,
+  contract,
   size = 20,
   saturation = 95,
   lightness = 45,
   className,
 }: ContractIdenticonProps) {
-  const svgURI = useMemo(
-    () =>
-      "data:image/svg+xml;utf8," +
-      encodeURIComponent(minidenticon(value, saturation, lightness)),
-    [value, saturation, lightness]
-  );
+  const { svgURI, seed } = useMemo(() => {
+    const seed = getContractIdenticonSeed(contract);
+    return {
+      seed,
+      svgURI:
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(minidenticon(seed, saturation, lightness)),
+    };
+  }, [contract, saturation, lightness]);
 
   return (
     <img
       src={svgURI}
-      alt={value}
+      alt={seed}
       width={size}
       height={size}
       className={className}
