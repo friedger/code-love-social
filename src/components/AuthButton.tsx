@@ -9,16 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogIn, LogOut, User as UserIcon, Loader2, Zap } from "lucide-react";
-import { BlueskyLoginForm, NostrLoginForm } from "@/components/auth";
+import { SignInDialog } from "@/components/auth/SignInDialog";
 import type { UnifiedUser } from "@/hooks/useAuth";
 
 interface AuthButtonProps {
