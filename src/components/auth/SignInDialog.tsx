@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,15 +10,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ExternalLink, Key, Link2, Loader2, Zap } from "lucide-react";
+  ArrowLeft,
+  ExternalLink,
+  Key,
+  Link2,
+  Loader2,
+  Zap,
+} from "lucide-react";
 
-export type SignInMethod = "nostr-extension" | "nostr-nsec" | "nostr-bunker" | "bluesky";
+export type SignInMethod =
+  | "nostr-extension"
+  | "nostr-nsec"
+  | "nostr-bunker"
+  | "bluesky";
 
 interface SignInDialogProps {
   open: boolean;
@@ -37,15 +41,26 @@ interface SignInDialogProps {
 interface MethodConfig {
   value: SignInMethod;
   label: string;
+  shortLabel: string;
   icon: React.ReactNode;
-  description: string;
+  tagline: string;
+  detailTitle: string;
+  detailDescription: string;
   inputLabel: string | null;
   inputType: "text" | "password";
   placeholder: string;
-  helper: React.ReactNode;
+  helper: string;
   submitLabel: string;
-  submitIcon: React.ReactNode;
 }
+
+const BlueskyIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 64 57" className={className} aria-hidden="true">
+    <path
+      fill="currentColor"
+      d="M13.873 3.805C21.21 9.332 29.103 20.537 32 26.55v15.882c0-.338-.13.044-.41.867-1.512 4.456-7.418 21.847-20.923 7.944-7.111-7.32-3.819-14.64 9.125-16.85-7.405 1.264-15.73-.825-18.014-9.015C1.12 23.022 0 8.51 0 6.55 0-3.268 8.579-.182 13.873 3.805ZM50.127 3.805C42.79 9.332 34.897 20.537 32 26.55v15.882c0-.338.13.044.41.867 1.512 4.456 7.418 21.847 20.923 7.944 7.111-7.32 3.819-14.64-9.125-16.85 7.405 1.264 15.73-.825 18.014-9.015C62.88 23.022 64 8.51 64 6.55c0-9.818-8.578-6.732-13.873-2.745Z"
+    />
+  </svg>
+);
 
 export function SignInDialog({
   open,
@@ -57,105 +72,107 @@ export function SignInDialog({
   onLoginNostrNsec,
   onLoginNostrBunker,
 }: SignInDialogProps) {
-  const [method, setMethod] = useState<SignInMethod>("nostr-extension");
+  const [method, setMethod] = useState<SignInMethod | null>(null);
   const [value, setValue] = useState("");
   const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const methods: MethodConfig[] = useMemo(
-    () => [
-      {
-        value: "nostr-extension",
-        label: "Nostr — Extension",
-        icon: <Zap className="h-4 w-4 text-amber-500" />,
-        description: hasNostrExtension
-          ? "Sign in using your installed NIP-07 browser extension."
-          : "No NIP-07 extension detected. Install Alby or nos2x, or pick another method.",
-        inputLabel: null,
-        inputType: "text",
-        placeholder: "",
-        helper: (
-          <span className="text-xs text-muted-foreground">
-            Recommended. Keys never leave your extension.
-          </span>
-        ),
-        submitLabel: "Sign in with Extension",
-        submitIcon: <Zap className="h-4 w-4 mr-2" />,
-      },
-      {
-        value: "nostr-nsec",
-        label: "Nostr — Private key (nsec)",
-        icon: <Key className="h-4 w-4 text-amber-500" />,
-        description: "Paste your nsec to sign in directly in this browser.",
-        inputLabel: "Private key",
-        inputType: "password",
-        placeholder: "nsec1...",
-        helper: (
-          <span className="text-xs text-muted-foreground">
-            Least secure — prefer an extension or bunker for valuable keys.
-          </span>
-        ),
-        submitLabel: "Sign in with nsec",
-        submitIcon: <Key className="h-4 w-4 mr-2" />,
-      },
-      {
-        value: "nostr-bunker",
-        label: "Nostr — Bunker (NIP-46)",
-        icon: <Link2 className="h-4 w-4 text-amber-500" />,
-        description: "Connect a remote signer like nsec.app or Amber.",
-        inputLabel: "Bunker URL or NIP-05",
-        inputType: "text",
-        placeholder: "bunker://... or name@domain.com",
-        helper: (
-          <span className="text-xs text-muted-foreground">
-            You may need to authorize this app in your bunker.
-          </span>
-        ),
-        submitLabel: "Connect bunker",
-        submitIcon: <Link2 className="h-4 w-4 mr-2" />,
-      },
-      {
-        value: "bluesky",
-        label: "Bluesky",
-        icon: <span className="text-sm">🦋</span>,
-        description: "Sign in with your Bluesky / AT Protocol handle.",
-        inputLabel: "Handle",
-        inputType: "text",
-        placeholder: "yourname.bsky.social",
-        helper: (
-          <span className="text-xs text-muted-foreground">
-            Enter your full handle (e.g. alice.bsky.social).
-          </span>
-        ),
-        submitLabel: "Continue with Bluesky",
-        submitIcon: <span className="mr-2">🦋</span>,
-      },
-    ],
-    [hasNostrExtension],
-  );
+  const methods: MethodConfig[] = [
+    {
+      value: "nostr-extension",
+      label: "Continue with Nostr extension",
+      shortLabel: "Nostr extension",
+      icon: <Zap className="h-4 w-4 text-amber-500" />,
+      tagline: "One click, keys stay in your extension",
+      detailTitle: "Sign in with your Nostr extension",
+      detailDescription: hasNostrExtension
+        ? "We'll ask your NIP-07 extension to approve the sign-in. Your keys never leave it."
+        : "No NIP-07 extension detected. Install Alby or nos2x, then come back.",
+      inputLabel: null,
+      inputType: "text",
+      placeholder: "",
+      helper: "Tip: Alby and nos2x are great choices.",
+      submitLabel: "Approve in extension",
+    },
+    {
+      value: "nostr-bunker",
+      label: "Continue with a remote signer (Bunker)",
+      shortLabel: "Bunker",
+      icon: <Link2 className="h-4 w-4 text-amber-500" />,
+      tagline: "Use nsec.app, Amber, or any NIP-46 signer",
+      detailTitle: "Connect a remote signer",
+      detailDescription:
+        "Paste a bunker URL or your NIP-05 identifier. You'll approve the connection in your signer app.",
+      inputLabel: "Bunker URL or NIP-05",
+      inputType: "text",
+      placeholder: "bunker://… or alice@nsec.app",
+      helper: "We'll open your signer to authorize this app.",
+      submitLabel: "Connect",
+    },
+    {
+      value: "bluesky",
+      label: "Continue with Bluesky",
+      shortLabel: "Bluesky",
+      icon: <BlueskyIcon className="h-4 w-4 text-sky-500" />,
+      tagline: "Sign in with your AT Protocol handle",
+      detailTitle: "Sign in with Bluesky",
+      detailDescription:
+        "Enter your handle and we'll redirect you to your PDS to approve.",
+      inputLabel: "Your handle",
+      inputType: "text",
+      placeholder: "alice.bsky.social",
+      helper: "Use your full handle, including the domain.",
+      submitLabel: "Continue",
+    },
+    {
+      value: "nostr-nsec",
+      label: "Use a private key (nsec)",
+      shortLabel: "Private key",
+      icon: <Key className="h-4 w-4 text-muted-foreground" />,
+      tagline: "Advanced — least secure",
+      detailTitle: "Sign in with a private key",
+      detailDescription:
+        "Paste your nsec to sign in directly in this browser. Stored locally only.",
+      inputLabel: "Private key",
+      inputType: "password",
+      placeholder: "nsec1…",
+      helper: "Prefer an extension or bunker for valuable keys.",
+      submitLabel: "Sign in",
+    },
+  ];
 
-  const current = methods.find((m) => m.value === method)!;
-  const requiresInput = current.inputLabel !== null;
-  const canSubmit =
-    !isSubmitting &&
-    (!requiresInput || value.trim().length > 0) &&
-    (current.value !== "nostr-extension" || hasNostrExtension);
+  const current = method ? methods.find((m) => m.value === method)! : null;
 
-  const handleMethodChange = (next: string) => {
-    setMethod(next as SignInMethod);
+  const reset = () => {
+    setMethod(null);
     setValue("");
     setError(null);
     setAuthUrl(null);
   };
 
+  const handleOpenChange = (next: boolean) => {
+    if (!next) reset();
+    onOpenChange(next);
+  };
+
+  const goBack = () => {
+    setValue("");
+    setError(null);
+    setAuthUrl(null);
+    setMethod(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!current || isSubmitting) return;
+    if (current.inputLabel && !value.trim()) return;
+    if (current.value === "nostr-extension" && !hasNostrExtension) return;
+
     setError(null);
     setAuthUrl(null);
     try {
       const trimmed = value.trim();
-      switch (method) {
+      switch (current.value) {
         case "nostr-extension":
           await onLoginNostr();
           break;
@@ -182,89 +199,128 @@ export function SignInDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md p-4 sm:p-6 gap-4">
-        <DialogHeader className="space-y-1 text-left">
-          <DialogTitle>Sign in</DialogTitle>
-          <DialogDescription>
-            Choose your preferred authentication method.
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md p-5 sm:p-6 gap-5">
+        {!current ? (
+          <>
+            <DialogHeader className="space-y-1.5 text-left">
+              <DialogTitle className="text-2xl">Welcome 👋</DialogTitle>
+              <DialogDescription>
+                Sign in to comment, react, and follow contracts.
+              </DialogDescription>
+            </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="signin-method">Method</Label>
-            <Select value={method} onValueChange={handleMethodChange}>
-              <SelectTrigger id="signin-method" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {methods.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    <span className="flex items-center gap-2">
-                      {m.icon}
+            <div className="flex flex-col gap-2">
+              {methods.map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => setMethod(m.value)}
+                  className="group flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-all hover:border-primary/40 hover:bg-accent hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted">
+                    {m.icon}
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-sm font-medium leading-tight">
                       {m.label}
                     </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    <span className="text-xs text-muted-foreground leading-tight mt-0.5">
+                      {m.tagline}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
 
-          <p className="text-sm text-muted-foreground min-h-[2.5rem]">
-            {current.description}
-          </p>
-
-          <div className="space-y-1.5 min-h-[5.25rem]">
-            {requiresInput ? (
-              <>
-                <Label htmlFor="signin-input">{current.inputLabel}</Label>
-                <Input
-                  id="signin-input"
-                  type={current.inputType}
-                  autoComplete="off"
-                  placeholder={current.placeholder}
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  disabled={isSubmitting}
-                />
-                {current.helper}
-              </>
-            ) : (
-              <div className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground min-h-[5.25rem] flex items-center">
-                {current.helper}
-              </div>
-            )}
-          </div>
-
-          <div className="min-h-[1.25rem] text-xs">
-            {error && <p className="text-destructive break-words">{error}</p>}
-            {authUrl && !error && (
-              <a
-                href={authUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline inline-flex items-center gap-1 break-all"
+            <p className="text-center text-xs text-muted-foreground">
+              No account needed — bring your decentralized identity.
+            </p>
+          </>
+        ) : (
+          <>
+            <DialogHeader className="space-y-2 text-left">
+              <button
+                type="button"
+                onClick={goBack}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit disabled:opacity-50"
               >
-                <ExternalLink className="h-3 w-3" /> Open authorization page
-              </a>
-            )}
-          </div>
+                <ArrowLeft className="h-3 w-3" /> Other options
+              </button>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
+                  {current.icon}
+                </span>
+                {current.detailTitle}
+              </DialogTitle>
+              <DialogDescription>{current.detailDescription}</DialogDescription>
+            </DialogHeader>
 
-          <Button type="submit" className="w-full" disabled={!canSubmit}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                {current.submitIcon}
-                {current.submitLabel}
-              </>
-            )}
-          </Button>
-        </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {current.inputLabel ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="signin-input">{current.inputLabel}</Label>
+                  <Input
+                    id="signin-input"
+                    type={current.inputType}
+                    autoComplete="off"
+                    autoFocus
+                    placeholder={current.placeholder}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {current.helper}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  {current.helper}
+                </div>
+              )}
+
+              {(error || authUrl) && (
+                <div className="text-xs">
+                  {error && (
+                    <p className="text-destructive break-words">{error}</p>
+                  )}
+                  {authUrl && !error && (
+                    <a
+                      href={authUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline inline-flex items-center gap-1 break-all"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Open authorization
+                      page
+                    </a>
+                  )}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  isSubmitting ||
+                  (current.inputLabel !== null && !value.trim()) ||
+                  (current.value === "nostr-extension" && !hasNostrExtension)
+                }
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting…
+                  </>
+                ) : (
+                  current.submitLabel
+                )}
+              </Button>
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
