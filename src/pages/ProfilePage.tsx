@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getCommentsByAuthor, ProfileData } from "@/lib/comments-api";
 import { identityService } from "@/lib/identity-service";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, FileCode, ExternalLink, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MessageSquare, FileCode, ExternalLink, ArrowLeft, BadgeCheck, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FollowingAvatars } from "@/components/FollowingAvatars";
 import { FollowButton } from "@/components/FollowButton";
@@ -14,14 +16,32 @@ import { PageLayout } from "@/components/PageLayout";
 import { getContractPath } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
+const NOSTR_DID_PREFIX = "did:pubkey:";
+
+type ProtocolKind = "nostr" | "atproto";
+
+function isNostrIdentifier(id: string | undefined): boolean {
+  if (!id) return false;
+  return id.startsWith(NOSTR_DID_PREFIX) || id.startsWith("npub1");
+}
+
+interface ResolvedProfile extends ProfileData {
+  nip05?: string;
+  about?: string;
+  protocol: ProtocolKind;
+}
+
 const ProfilePage = () => {
   const { did: identifier } = useParams<{ did: string }>();
   const { user } = useAuth();
 
-  // Determine if we need to resolve the identifier
-  const isHandle = identifier ? identityService.isHandle(identifier) : false;
+  const protocol: ProtocolKind = isNostrIdentifier(identifier) ? "nostr" : "atproto";
 
-  // Resolve handle to DID if needed
+  // ===== AT Protocol resolution =====
+  const isHandle = identifier && protocol === "atproto"
+    ? identityService.isHandle(identifier)
+    : false;
+
   const { data: resolvedDid, isLoading: isResolvingHandle } = useQuery({
     queryKey: ["resolve-handle", identifier],
     queryFn: () => identityService.resolveHandle(identifier!),
@@ -29,25 +49,67 @@ const ProfilePage = () => {
     staleTime: 10 * 60 * 1000,
   });
 
-  const did = isHandle ? resolvedDid : identifier;
+  const did = protocol === "nostr"
+    ? identifier
+    : (isHandle ? resolvedDid : identifier);
 
+  // ===== Comments (works for both protocols) =====
   const { data, isLoading: isLoadingComments, error } = useQuery({
     queryKey: ["profile-comments", did],
     queryFn: () => getCommentsByAuthor(did!),
     enabled: !!did,
   });
 
-  const { data: bskyProfile, isLoading: isLoadingProfile } = useQuery({
+  // ===== AT Proto profile =====
+  const { data: bskyProfile, isLoading: isLoadingAtproto } = useQuery({
     queryKey: ["bsky-profile", did],
     queryFn: () => identityService.getProfile(did!),
-    enabled: !!did,
+    enabled: !!did && protocol === "atproto",
     staleTime: 5 * 60 * 1000,
   });
 
-  const isLoading = isResolvingHandle || isLoadingComments || isLoadingProfile;
-  const profile: ProfileData | undefined = did ? data?.profiles[did] : undefined;
+  // ===== Nostr profile (cached server-side in nostr_profiles) =====
+  const { data: nostrProfile, isLoading: isLoadingNostr } = useQuery({
+    queryKey: ["nostr-profile", did],
+    queryFn: async (): Promise<ResolvedProfile | null> => {
+      const pubkey = did!.slice(NOSTR_DID_PREFIX.length);
+      const { data: row } = await supabase
+        .from("nostr_profiles")
+        .select("pubkey, name, display_name, picture, nip05, about")
+        .eq("pubkey", pubkey)
+        .maybeSingle();
+      if (!row) return null;
+      return {
+        did: did!,
+        handle: row.nip05 || row.name || pubkey.slice(0, 12),
+        displayName: row.display_name || row.name || undefined,
+        avatar: row.picture || undefined,
+        nip05: row.nip05 || undefined,
+        about: row.about || undefined,
+        protocol: "nostr",
+      };
+    },
+    enabled: !!did && protocol === "nostr",
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isLoading =
+    isResolvingHandle ||
+    isLoadingComments ||
+    (protocol === "atproto" ? isLoadingAtproto : isLoadingNostr);
+
+  const commentProfile: ProfileData | undefined = did ? data?.profiles[did] : undefined;
   const comments = data?.comments || [];
-  const displayProfile = bskyProfile || profile;
+
+  const displayProfile: ResolvedProfile | undefined = (() => {
+    if (protocol === "nostr") {
+      if (nostrProfile) return nostrProfile;
+      if (commentProfile) return { ...commentProfile, protocol: "nostr" };
+      return undefined;
+    }
+    const base = bskyProfile || commentProfile;
+    return base ? { ...base, protocol: "atproto" } : undefined;
+  })();
 
   return (
     <PageLayout maxWidth="narrow">
@@ -59,7 +121,7 @@ const ProfilePage = () => {
       </Button>
 
       {/* Profile header */}
-      <Card className="mb-4 sm:mb-6">
+      <Card className="mb-4 sm:mb-6 overflow-hidden">
         <CardContent className="p-4 sm:p-6">
           {isLoading && !displayProfile ? (
             <ProfileSkeleton />
@@ -96,12 +158,25 @@ function ProfileSkeleton() {
 }
 
 interface ProfileHeaderProps {
-  profile?: ProfileData;
+  profile?: ResolvedProfile;
   did?: string;
   currentUserDid?: string;
 }
 
 function ProfileHeader({ profile, did, currentUserDid }: ProfileHeaderProps) {
+  const isNostr = profile?.protocol === "nostr";
+  const npub = isNostr && did ? did.slice(NOSTR_DID_PREFIX.length) : undefined;
+
+  const externalUrl = isNostr
+    ? `https://njump.me/${npub}`
+    : `https://bsky.app/profile/${profile?.handle || did}`;
+  const externalLabel = isNostr ? "View on njump" : "View on Bluesky";
+  const ExternalIcon = isNostr ? Zap : ExternalLink;
+
+  const fallbackHandle = isNostr
+    ? (npub ? `${npub.slice(0, 8)}…${npub.slice(-4)}` : did)
+    : did?.slice(0, 20);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
@@ -117,27 +192,57 @@ function ProfileHeader({ profile, did, currentUserDid }: ProfileHeaderProps) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                {profile?.displayName || profile?.handle || "Unknown User"}
-              </h2>
-              <p className="text-muted-foreground text-sm sm:text-base break-all">
-                @{profile?.handle || did?.slice(0, 20)}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
+                  {profile?.displayName || profile?.handle || "Unknown User"}
+                </h2>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] uppercase tracking-wide font-medium"
+                >
+                  {isNostr ? "Nostr" : "AT Protocol"}
+                </Badge>
+              </div>
+
+              {isNostr && profile?.nip05 ? (
+                <p className="text-muted-foreground text-sm sm:text-base break-all inline-flex items-center gap-1 mt-0.5">
+                  <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
+                  {profile.nip05}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm sm:text-base break-all mt-0.5">
+                  @{profile?.handle || fallbackHandle}
+                </p>
+              )}
+
+              {isNostr && npub && (
+                <p className="text-xs text-muted-foreground/70 font-mono break-all mt-1">
+                  {npub.slice(0, 12)}…{npub.slice(-8)}
+                </p>
+              )}
+
+              {profile?.about && (
+                <p className="text-sm text-foreground/80 mt-3 whitespace-pre-line">
+                  {profile.about}
+                </p>
+              )}
             </div>
-            {did && <FollowButton targetDid={did} currentUserDid={currentUserDid} />}
+            {did && !isNostr && (
+              <FollowButton targetDid={did} currentUserDid={currentUserDid} />
+            )}
           </div>
           <a
-            href={`https://bsky.app/profile/${profile?.handle || did}`}
+            href={externalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-2"
+            className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-3"
           >
-            View on Bluesky <ExternalLink className="h-3 w-3" />
+            {externalLabel} <ExternalIcon className="h-3 w-3" />
           </a>
         </div>
       </div>
 
-      {did && <FollowingAvatars actor={did} limit={30} />}
+      {did && !isNostr && <FollowingAvatars actor={did} limit={30} />}
     </div>
   );
 }
