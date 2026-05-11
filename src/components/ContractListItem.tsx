@@ -35,7 +35,7 @@ export function ContractListItem({
   const content = (
     <div className="flex items-start gap-3">
       <ContractIdenticon
-        value={sourceHash || contractPath}
+        contract={{ principal, contractName }}
         size={identiconSize}
         className="shrink-0 rounded-sm"
       />
