@@ -38,6 +38,23 @@ const ProfilePage = () => {
 
   const protocol: ProtocolKind = isNostrIdentifier(identifier) ? "nostr" : "atproto";
 
+  // Normalize Nostr identifier (npub or did:pubkey:hex) into hex pubkey + canonical DID.
+  let nostrPubkey: string | undefined;
+  let nostrDid: string | undefined;
+  if (protocol === "nostr" && identifier) {
+    try {
+      if (identifier.startsWith("npub1")) {
+        const decoded = nip19.decode(identifier);
+        if (decoded.type === "npub") nostrPubkey = decoded.data as string;
+      } else if (identifier.startsWith(NOSTR_DID_PREFIX)) {
+        nostrPubkey = identifier.slice(NOSTR_DID_PREFIX.length);
+      }
+    } catch {
+      // invalid npub
+    }
+    if (nostrPubkey) nostrDid = `${NOSTR_DID_PREFIX}${nostrPubkey}`;
+  }
+
   // ===== AT Protocol resolution =====
   const isHandle = identifier && protocol === "atproto"
     ? identityService.isHandle(identifier)
