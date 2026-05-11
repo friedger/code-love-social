@@ -9,12 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, FileCode, ExternalLink, ArrowLeft, BadgeCheck, Zap } from "lucide-react";
+import { MessageSquare, ExternalLink, ArrowLeft, BadgeCheck, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FollowingAvatars } from "@/components/FollowingAvatars";
 import { FollowButton } from "@/components/FollowButton";
 import { PageLayout } from "@/components/PageLayout";
-import { getContractPath } from "@/lib/utils";
+import { ContractIdenticon } from "@/components/ContractIdenticon";
+import { formatContractId, getContractPath } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const NOSTR_DID_PREFIX = "did:pubkey:";
