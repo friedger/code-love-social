@@ -93,25 +93,25 @@ const ProfilePage = () => {
   const { data: nostrProfile, isLoading: isLoadingNostr } = useQuery({
     queryKey: ["nostr-profile", nostrPubkey],
     queryFn: async (): Promise<ResolvedProfile | null> => {
-      const { data, error } = await supabase.functions.invoke("nostr-profile", {
-        method: "GET" as never,
-        // supabase-js doesn't accept query params directly; pass via URL.
-      } as never).catch(() => ({ data: null, error: null }));
-      // Fallback: invoke with explicit fetch since supabase-js v2 lacks GET query support.
-      let row = (data as { profile: NostrProfileRow | null } | null)?.profile ?? null;
-      if (!row && !error) {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nostr-profile?pubkey=${nostrPubkey}`;
-        const resp = await fetch(url, {
-          headers: {
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-        });
-        if (resp.ok) {
-          const json = await resp.json();
-          row = json.profile ?? null;
-        }
-      }
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nostr-profile?pubkey=${nostrPubkey}`;
+      const resp = await fetch(url, {
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (!resp.ok) return null;
+      const json = await resp.json() as {
+        profile: {
+          pubkey: string;
+          name: string | null;
+          display_name: string | null;
+          picture: string | null;
+          nip05: string | null;
+          about: string | null;
+        } | null;
+      };
+      const row = json.profile;
       if (!row) return null;
       return {
         did: nostrDid!,
