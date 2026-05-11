@@ -233,6 +233,39 @@ export type Database = {
         }
         Relationships: []
       }
+      nostr_profiles: {
+        Row: {
+          about: string | null
+          display_name: string | null
+          event_created_at: number
+          fetched_at: string
+          name: string | null
+          nip05: string | null
+          picture: string | null
+          pubkey: string
+        }
+        Insert: {
+          about?: string | null
+          display_name?: string | null
+          event_created_at?: number
+          fetched_at?: string
+          name?: string | null
+          nip05?: string | null
+          picture?: string | null
+          pubkey: string
+        }
+        Update: {
+          about?: string | null
+          display_name?: string | null
+          event_created_at?: number
+          fetched_at?: string
+          name?: string | null
+          nip05?: string | null
+          picture?: string | null
+          pubkey?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
