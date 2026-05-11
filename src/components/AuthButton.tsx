@@ -68,12 +68,6 @@ export function AuthButton({
     }
   };
 
-  const handleNostrLogin = () => wrapNostr(() => onLoginNostr());
-  const handleNostrNsec = (nsec: string) =>
-    wrapNostr(() => onLoginNostrNsec(nsec));
-  const handleNostrBunker = (input: string, onauth?: (url: string) => void) =>
-    wrapNostr(() => onLoginNostrBunker(input, onauth));
-
   if (isLoading) {
     return (
       <Button variant="ghost" disabled>
