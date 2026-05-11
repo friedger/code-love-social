@@ -154,26 +154,26 @@ export function AuthButton({
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="bluesky">Bluesky</TabsTrigger>
               <TabsTrigger value="nostr" className="gap-1">
                 <Zap className="h-3 w-3" />
                 Nostr
               </TabsTrigger>
+              <TabsTrigger value="bluesky">Bluesky</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="bluesky" className="mt-4">
-              <BlueskyLoginForm
-                onSubmit={handleAtprotoSubmit}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-
-            <TabsContent value="nostr" className="mt-4">
+            <TabsContent value="nostr" className="mt-4 min-h-[360px]">
               <NostrLoginForm
                 hasExtension={hasNostrExtension}
                 onLogin={handleNostrLogin}
                 onLoginNsec={handleNostrNsec}
                 onLoginBunker={handleNostrBunker}
+                isSubmitting={isSubmitting}
+              />
+            </TabsContent>
+
+            <TabsContent value="bluesky" className="mt-4 min-h-[360px]">
+              <BlueskyLoginForm
+                onSubmit={handleAtprotoSubmit}
                 isSubmitting={isSubmitting}
               />
             </TabsContent>
