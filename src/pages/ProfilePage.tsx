@@ -176,6 +176,7 @@ const ProfilePage = () => {
         comments={comments}
         isLoading={isLoadingComments}
         error={error}
+        sourceHashes={sourceHashes}
       />
     </PageLayout>
   );
