@@ -19,7 +19,7 @@ export function BlueskyLoginForm({ onSubmit, isSubmitting }: BlueskyLoginFormPro
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
       <div className="space-y-2">
         <Label htmlFor="handle">Handle</Label>
         <Input
@@ -35,7 +35,7 @@ export function BlueskyLoginForm({ onSubmit, isSubmitting }: BlueskyLoginFormPro
       </div>
       <Button
         type="submit"
-        className="w-full"
+        className="w-full mt-auto"
         disabled={isSubmitting || !handle.trim()}
       >
         {isSubmitting ? (
